@@ -1,7 +1,7 @@
 ---
 name: livecheck
 description: |
-  Live status of a specific listing, product page, or job posting, read from the page itself right now, via x402. Returns live / closed / unknown plus title and signals (in-stock, sold-out, apply form, 404). Also one-shot condition checks and 30-day URL watchers.
+  Live status of a specific listing, product page, or job posting, read from the page itself right now, via x402. Returns live / closed / unknown plus title and signals (in-stock, sold-out, apply form present, http_404). Also one-shot condition checks and 30-day URL watchers.
 
   USE FOR:
   - Checking whether a product page, eBay item, or Shopify listing is still available before recommending or buying it
@@ -57,7 +57,7 @@ npx agentcash@latest fetch https://livecheck.fly.dev/v1/verify -m POST -b '{"url
 **Returns:**
 - `status` - `live`, `closed`, or `unknown`
 - `title` - Page title of the item
-- `signals` - Evidence behind the status, e.g. `in_stock`, `sold_out`, `apply_form`, `ended_banner`, `http_404`
+- `signals` - Evidence strings from production (not snake_case kit names). Examples: `http_404`, `http_410`, `close_language:<phrase>`, `redirected_to_board`, `ats_empty_state`, `challenge_page`, `loginwalled`, `not_a_specific_posting`, `careers_homepage`, `collection_or_category`, `apply form present`, `no closure banner`, `sold-out`, `in-stock`, `ambiguous_html`. eBay adapter may add `ebay-ended`, `ebay-in-stock`, `ebay_availability_unknown`. There is no `invalid_url` code; errors are `{ "error": "<message>" }` (400 for bad URL/JSON, 502 fetch fail, 504 timeout).
 - `http_status`, `canonical_url`, `checked_at`
 - `confidence` - 0 to 1
 
@@ -96,7 +96,7 @@ npx agentcash@latest fetch https://livecheck.fly.dev/v1/watch -m POST -b '{
 }'
 ```
 
-Requires a public HTTPS callback URL. The response returns an `owner_token` once; store it. Read history later with `GET /v1/watch/{id}/events` and header `X-Livecheck-Owner-Token`. If you don't have a public HTTPS endpoint, use `/v1/check` on a schedule instead.
+Callback is optional. If you have a public HTTPS endpoint, pass `callback.url` + `secret` and Livecheck HMAC-posts when the condition fires. If you omit `callback`, pull history with `GET /v1/watch/{id}/events` and header `X-Livecheck-Owner-Token`. The response returns an `owner_token` once; store it. If you only need a one-shot check, use `/v1/check` instead of a watcher.
 
 ## Confirm: did the form or order actually go through?
 
