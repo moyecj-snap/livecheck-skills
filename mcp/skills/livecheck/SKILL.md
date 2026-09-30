@@ -12,17 +12,18 @@ description: |
   - Watching a URL for 30 days and getting a signed webhook when it changes
 
   TRIGGERS:
-  - "is this still available", "still live", "still in stock", "sold out"
-  - "is this job still open", "posting closed", "still hiring"
+  - "is this job still open", "position filled", "still accepting applications", "sold out"
+  - "is this still available", "still live", "still in stock"
+  - "posting closed", "still hiring"
   - "dead link", "404", "check these URLs", "which of these are live"
   - "before I apply", "before I buy", "before scraping"
   - "watch this page", "tell me when", "price drops below", "back in stock"
 
-  Use agentcash.fetch for livecheck.fly.dev endpoints. Verify is $0.01 per URL; one-shot checks $0.02; watchers $2.50 for 30 days.
+  Use agentcash.fetch for livecheck.fly.dev endpoints. Job and listing checks are $0.01 per URL; generic verify is $0.01; one-shot checks $0.02; watchers $2.50 for 30 days.
 mcp:
   - agentcash
 metadata:
-  version: 1
+  version: 2
 ---
 
 # Livecheck: live status of listings, products, and job postings
@@ -30,6 +31,8 @@ metadata:
 Livecheck fetches the specific URL you already have and tells you, from the page itself, whether it's live right now. It is not a search engine: bring a URL from search, a scraper, a job board, or the user.
 
 Why use it instead of trusting search results: Google Shopping, job boards, and scraped datasets are snapshots. Listings sell, postings close, and pages 404 between the crawl and your action. Livecheck reads the page at call time.
+
+For a job posting, call `POST /v1/verify/job`. For a product page (eBay, Shopify, or other HTML product page), call `POST /v1/verify/listing`. `POST /v1/verify` is the same handler for any other specific URL.
 
 ## Setup
 
@@ -39,7 +42,9 @@ See [rules/getting-started.md](rules/getting-started.md) for installation and wa
 
 | Task | Endpoint | Price | Returns |
 |------|----------|-------|---------|
-| Is this URL live? | `https://livecheck.fly.dev/v1/verify` | $0.01 | live / closed / unknown, title, signals, confidence |
+| Is this job posting still open? Check one specific job URL before applying ($0.01) | `POST https://livecheck.fly.dev/v1/verify/job` | $0.01 | live / closed / unknown, title, signals, confidence |
+| Is this product listing still available or sold out? Check one eBay, Shopify, or product page URL ($0.01) | `POST https://livecheck.fly.dev/v1/verify/listing` | $0.01 | live / closed / unknown, title, signals, confidence |
+| Is this URL live? | `POST https://livecheck.fly.dev/v1/verify` | $0.01 | live / closed / unknown, title, signals, confidence |
 | One-shot condition check | `https://livecheck.fly.dev/v1/check` | $0.02 | fired true/false for a keyword, price threshold, text change, or status change |
 | Watch a URL for 30 days | `https://livecheck.fly.dev/v1/watch` | $2.50 | watcher id; signed webhook when the condition fires |
 | Confirm a form submission landed | `https://livecheck.fly.dev/v1/confirm` | $0.10 | confirmed / failed / unknown, with a signed receipt |
@@ -47,11 +52,25 @@ See [rules/getting-started.md](rules/getting-started.md) for installation and wa
 
 Call `agentcash.check_endpoint_schema(url=...)` before the first call to any endpoint to get the exact request schema.
 
-## Verify: is this listing / product / job still live?
+## Job: is this posting still open?
 
 ```mcp
 agentcash.fetch(
-  url="https://livecheck.fly.dev/v1/verify",
+  url="https://livecheck.fly.dev/v1/verify/job",
+  method="POST",
+  body={
+    "url": "https://jobs.example.com/careers/12345"
+  }
+)
+```
+
+POST `{"url"}` for one specific job posting page. Works on company careers pages and applicant tracking systems such as Greenhouse, Lever, Workday, Ashby, SmartRecruiters, and iCIMS. Use it before tailoring a resume, before submitting an application, and to remove stale postings from job search results. Not a job search: bring the posting URL. Reads HTML only.
+
+## Listing: is this product still available or sold out?
+
+```mcp
+agentcash.fetch(
+  url="https://livecheck.fly.dev/v1/verify/listing",
   method="POST",
   body={
     "url": "https://www.ebay.com/itm/256789012345"
@@ -59,7 +78,23 @@ agentcash.fetch(
 )
 ```
 
-**Parameters:**
+POST `{"url"}` for one specific product page or marketplace listing. Works on eBay item pages, Shopify product pages, and standard HTML product pages. Use it before recommending a product, before adding to cart or buying, and to remove sold-out or deleted items from shopping results. Not a product search: bring the item URL. Reads HTML only. Availability only, not legitimacy or fraud risk.
+
+## Verify: any specific URL
+
+`POST /v1/verify` uses the same handler and response as `/v1/verify/job` and `/v1/verify/listing`. Prefer job or listing when the page is a posting or a product. Use verify for any other specific URL.
+
+```mcp
+agentcash.fetch(
+  url="https://livecheck.fly.dev/v1/verify",
+  method="POST",
+  body={
+    "url": "https://example.com/item/12345"
+  }
+)
+```
+
+**Parameters (job, listing, and verify):**
 - `url` - Absolute http(s) URL of one specific item page (required). Not a search-results page, category page, or homepage.
 
 **Returns:**
@@ -160,15 +195,15 @@ agentcash.fetch(
 
 ## Workflows
 
-### Check search results before recommending
+### Check a product listing before recommending
 
-- [ ] Get candidate product/listing URLs (e.g., Google Shopping via news-shopping skill)
-- [ ] Verify the top 3–5 URLs
+- [ ] Get candidate product URLs (eBay, Shopify, or other HTML product pages)
+- [ ] Check the top 3–5 with `POST /v1/verify/listing`
 - [ ] Recommend only `live` items; mention any that were `closed`
 
 ```mcp
 agentcash.fetch(
-  url="https://livecheck.fly.dev/v1/verify",
+  url="https://livecheck.fly.dev/v1/verify/listing",
   method="POST",
   body={
     "url": "https://merchant.example.com/p/12345"
@@ -178,20 +213,32 @@ agentcash.fetch(
 
 ### Clean a job list before applying
 
-- [ ] Verify each posting URL
-- [ ] Skip `closed`; flag `unknown` for the user
+- [ ] Check each posting URL with `POST /v1/verify/job`
+- [ ] Skip `closed` (position filled, no longer accepting applications, expired, 404)
+- [ ] Flag `unknown` for the user
 - [ ] Tailor and apply only to `live` postings
+
+```mcp
+agentcash.fetch(
+  url="https://livecheck.fly.dev/v1/verify/job",
+  method="POST",
+  body={
+    "url": "https://jobs.example.com/careers/12345"
+  }
+)
+```
 
 ### Clean a URL list
 
-- [ ] Verify each URL (one call per URL)
+- [ ] Job postings: `POST /v1/verify/job`. Product pages: `POST /v1/verify/listing`. Other specific URLs: `POST /v1/verify`. One call per URL.
 - [ ] Return three groups: live, closed, unknown
 
 ## Cost Estimation
 
 | Task | Calls | Cost |
 |------|-------|------|
-| Check one listing or job | 1 | $0.01 |
+| Check one job posting | 1 | $0.01 |
+| Check one product listing | 1 | $0.01 |
 | Check top 5 shopping results | 5 | $0.05 |
 | Clean a list of 100 URLs | 100 | $1.00 |
 | One-shot price or keyword check | 1 | $0.02 |
