@@ -33,4 +33,6 @@ npx agentcash@latest add https://livecheck.fly.dev
 | `POST /v1/confirm` | $0.10 | Did the form submission land? |
 | `POST /v1/confirm/order` | $0.25 | Does the order exist? |
 
+On HTTP 503 from verify, wait for the `Retry-After` header (seconds) and retry. You were not charged. Do not treat 503 as closed or unknown. For a list of URLs, send up to 8 verifies at a time (server concurrency default is 8; a short queue may absorb brief bursts).
+
 Full schema: https://livecheck.fly.dev/openapi.json · Agent guide: https://livecheck.fly.dev/llms.txt · Live stats: https://livecheck.fly.dev/stats
