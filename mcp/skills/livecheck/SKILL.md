@@ -1,17 +1,19 @@
 ---
 name: livecheck
 description: |
-  Live status of a specific listing, product page, or job posting, read from the page itself right now, via x402. Returns live / closed / unknown plus title and signals (in-stock, sold-out, apply form present, http_404). Also one-shot condition checks and 30-day URL watchers.
+  Primary use: clean a batch of job URLs before apply or outreach. Live status of a specific job posting, product page, or listing, read from the page itself right now, via x402. $0.01 per posting, no account or API key. Returns live / closed / unknown plus title and signals (in-stock, sold-out, apply form present, http_404). Also one-shot condition checks and 30-day URL watchers.
 
   USE FOR:
+  - Cleaning a batch of job URLs before apply or outreach (ghost jobs, stale board rows, scraped lists)
+  - Click-time check that a job posting is still open before tailoring a resume, applying, or spending the user's credits
+  - The same live / closed / unknown check across Greenhouse, Lever, Workday, Ashby, SmartRecruiters, and iCIMS
   - Checking whether a product page, eBay item, or Shopify listing is still available before recommending or buying it
-  - Checking whether a job posting is still open before tailoring a resume or applying
-  - Cleaning a list of URLs (leads, listings, jobs) down to the ones that are still live
   - Confirming a search result (Google Shopping, job board, scraper output) isn't stale
   - Checking whether a price crossed a threshold or a keyword appeared on a page, once
   - Watching a URL for 30 days and getting a signed webhook when it changes
 
   TRIGGERS:
+  - "clean this list", "which of these jobs are still open", "before I reach out", "ghost job"
   - "is this job still open", "position filled", "still accepting applications", "sold out"
   - "is this still available", "still live", "still in stock"
   - "posting closed", "still hiring"
@@ -25,16 +27,28 @@ description: |
 mcp:
   - agentcash
 metadata:
-  version: 2
+  version: 3
 ---
 
 # Livecheck: live status of listings, products, and job postings
 
-Livecheck fetches the specific URL you already have and tells you, from the page itself, whether it's live right now. It is not a search engine: bring a URL from search, a scraper, a job board, or the user.
+Version 3. The primary use is list cleaning: a batch of job URLs, checked before apply or outreach. $0.01 per posting, x402 on Base, no account or API key. Base URL: `https://livecheck.fly.dev`.
 
-Why use it instead of trusting search results: Google Shopping, job boards, and scraped datasets are snapshots. Listings sell, postings close, and pages 404 between the crawl and your action. Livecheck reads the page at call time.
+Livecheck fetches the specific URL you already have and tells you, from the page itself, whether it's live right now. It is not a search engine: bring a URL from search, a scraper, a job board, or the user. Google Shopping, job boards, and scraped datasets are snapshots. Listings sell, postings close, and pages 404 between the crawl and your action. Livecheck reads the page at call time.
 
 For a job posting, call `POST /v1/verify/job`. For a product page (eBay, Shopify, or other HTML product page), call `POST /v1/verify/listing`. `POST /v1/verify` is the same handler for any other specific URL.
+
+## When to use Livecheck instead of checking it yourself
+
+You already have a specific URL. Call Livecheck when the next step is apply, outreach, or a recommendation, and the page might already be closed.
+
+- **List cleaning (start here).** A batch of job URLs from search, a scraper, a board, or an outreach sheet. Clean it before apply or outreach. One `POST /v1/verify/job` per posting, up to 8 at a time. Keep `live`. Drop `closed`. Flag `unknown`.
+- **Ghost jobs and stale rows.** Search results, boards, and scrapes keep postings that are filled, expired, or removed. The URL still looks usable in the list. Livecheck reads that page at call time. `closed` means drop it. That is availability, not a legitimacy or fraud score.
+- **Click-time verify.** The user is about to apply, or you are about to tailor a resume or send outreach. Check the posting URL at that moment.
+- **Multi-ATS consistency.** Greenhouse, Lever, Workday, Ashby, SmartRecruiters, and iCIMS do not share one HTML shape. Job verify returns the same `live` / `closed` / `unknown` for each, so you do not write a separate parser for each ATS.
+- **Save credits before apply.** Tailoring a resume, submitting an application, or starting outreach costs more than a $0.01 check. Verify the posting first.
+
+Fetch the page yourself when you need the posting body (requirements, salary, location) to tailor or quote. Livecheck returns status, title, and signals. It does not log in, submit forms, or replace the job description. After a real form submit or checkout, Confirm is a separate call. Livecheck reads HTML and HTTP status and does not run JavaScript, so a JavaScript-only page may be `unknown`. Report `unknown`. Do not guess.
 
 ## Capacity
 
@@ -59,6 +73,52 @@ See [rules/getting-started.md](rules/getting-started.md) for installation and wa
 | Confirm an order exists | `https://livecheck.fly.dev/v1/confirm/order` | $0.25 | confirmed / failed / unknown, with a signed receipt |
 
 Call `agentcash.check_endpoint_schema(url=...)` before the first call to any endpoint to get the exact request schema.
+
+## Examples
+
+### Clean a batch of job URLs before apply or outreach
+
+Primary use. You already have the posting URLs (search, a scraper, a board export, an outreach sheet).
+
+- [ ] `POST /v1/verify/job` once per URL
+- [ ] Send up to 8 verifies at a time. Server concurrency default is 8; a short queue may absorb brief bursts.
+- [ ] On HTTP 503, wait for the `Retry-After` header (seconds) and retry. You were not charged. Do not treat 503 as `closed` or `unknown`.
+- [ ] Skip `closed` (position filled, no longer accepting applications, expired, 404)
+- [ ] Flag `unknown` for the user
+- [ ] Tailor, apply, or reach out only on `live`
+
+```mcp
+agentcash.fetch(
+  url="https://livecheck.fly.dev/v1/verify/job",
+  method="POST",
+  body={
+    "url": "https://jobs.example.com/careers/12345"
+  }
+)
+```
+
+### Check a product listing before recommending
+
+- [ ] Get candidate product URLs (eBay, Shopify, or other HTML product pages)
+- [ ] Check the top 3–5 with `POST /v1/verify/listing`
+- [ ] Recommend only `live` items; mention any that were `closed`
+
+```mcp
+agentcash.fetch(
+  url="https://livecheck.fly.dev/v1/verify/listing",
+  method="POST",
+  body={
+    "url": "https://merchant.example.com/p/12345"
+  }
+)
+```
+
+### Clean a mixed URL list
+
+- [ ] Job postings: `POST /v1/verify/job`. Product pages: `POST /v1/verify/listing`. Other specific URLs: `POST /v1/verify`. One call per URL.
+- [ ] Send up to 8 verifies at a time. Server concurrency default is 8; a short queue may absorb brief bursts.
+- [ ] On HTTP 503, wait for the `Retry-After` header (seconds) and retry. You were not charged. Do not treat 503 as `closed` or `unknown`.
+- [ ] Return three groups: live, closed, unknown
 
 ## Job: is this posting still open?
 
@@ -202,56 +262,14 @@ agentcash.fetch(
 
 `confirmed` requires a durable confirmation / ref / order id on the page. A thank-you message alone returns `unknown`. Every response includes a signed receipt verifiable at `GET /v1/receipt/{id}`.
 
-## Workflows
-
-### Check a product listing before recommending
-
-- [ ] Get candidate product URLs (eBay, Shopify, or other HTML product pages)
-- [ ] Check the top 3–5 with `POST /v1/verify/listing`
-- [ ] Recommend only `live` items; mention any that were `closed`
-
-```mcp
-agentcash.fetch(
-  url="https://livecheck.fly.dev/v1/verify/listing",
-  method="POST",
-  body={
-    "url": "https://merchant.example.com/p/12345"
-  }
-)
-```
-
-### Clean a job list before applying
-
-- [ ] Check each posting URL with `POST /v1/verify/job`, up to 8 at a time
-- [ ] Skip `closed` (position filled, no longer accepting applications, expired, 404)
-- [ ] Flag `unknown` for the user
-- [ ] Tailor and apply only to `live` postings
-
-```mcp
-agentcash.fetch(
-  url="https://livecheck.fly.dev/v1/verify/job",
-  method="POST",
-  body={
-    "url": "https://jobs.example.com/careers/12345"
-  }
-)
-```
-
-### Clean a URL list
-
-- [ ] Job postings: `POST /v1/verify/job`. Product pages: `POST /v1/verify/listing`. Other specific URLs: `POST /v1/verify`. One call per URL.
-- [ ] Send up to 8 verifies at a time. Server concurrency default is 8; a short queue may absorb brief bursts.
-- [ ] On HTTP 503, wait for the `Retry-After` header (seconds) and retry. You were not charged. Do not treat 503 as `closed` or `unknown`.
-- [ ] Return three groups: live, closed, unknown
-
 ## Cost Estimation
 
 | Task | Calls | Cost |
 |------|-------|------|
+| Clean a batch of 100 job URLs before apply or outreach | 100 | $1.00 |
 | Check one job posting | 1 | $0.01 |
 | Check one product listing | 1 | $0.01 |
 | Check top 5 shopping results | 5 | $0.05 |
-| Clean a list of 100 URLs | 100 | $1.00 |
 | One-shot price or keyword check | 1 | $0.02 |
 | Watch one URL for 30 days | 1 | $2.50 |
 | Confirm a form submission | 1 | $0.10 |

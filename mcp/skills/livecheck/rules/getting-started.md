@@ -1,5 +1,35 @@
 # Getting Started
 
+Version 3. $0.01 per posting, x402 on Base, no account or API key. Base URL: `https://livecheck.fly.dev`.
+
+## When to use Livecheck instead of checking it yourself
+
+You already have a specific URL. Call Livecheck instead of fetching the posting page and deciding yourself:
+
+- **List cleaning (start here).** A batch of job URLs before apply or outreach. `POST /v1/verify/job` once per URL, up to 8 at a time. Keep `live`. Drop `closed`. Flag `unknown`.
+- **Ghost jobs and stale rows.** The link is still in a board or scrape after the role was filled, expired, or removed. Livecheck reads the page at call time. Availability only, not a legitimacy score.
+- **Click-time verify.** Check the posting when the user is about to apply, or when you are about to tailor a resume or send outreach.
+- **Multi-ATS consistency.** Greenhouse, Lever, Workday, Ashby, SmartRecruiters, and iCIMS return the same `live` / `closed` / `unknown`, so you do not write a separate parser for each ATS.
+- **Save credits before apply.** A $0.01 check before a tailored resume, an application, or outreach.
+
+Fetch the page yourself when you need the posting body to tailor or quote. Livecheck returns status, title, and signals. It does not log in or submit forms. After a real submit, Confirm is a separate call.
+
+## Clean a batch of job URLs before apply or outreach
+
+Primary use. One call per posting. Send up to 8 verifies at a time. On HTTP 503, wait for the `Retry-After` header (seconds) and retry. You were not charged. Do not treat 503 as closed or unknown.
+
+```mcp
+agentcash.fetch(
+  url="https://livecheck.fly.dev/v1/verify/job",
+  method="POST",
+  body={
+    "url": "https://jobs.example.com/careers/12345"
+  }
+)
+```
+
+For a product page, use `POST /v1/verify/listing`. For any other specific URL, use `POST /v1/verify`.
+
 ## Setup
 
 1. **Install the agentcash MCP:**
