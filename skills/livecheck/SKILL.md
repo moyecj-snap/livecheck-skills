@@ -136,9 +136,12 @@ npx agentcash@latest fetch https://livecheck.fly.dev/v1/verify -m POST -b '{"url
 **Returns:**
 - `status` - `live`, `closed`, or `unknown`
 - `title` - Page title of the item
-- `signals` - Evidence strings from production (not snake_case kit names). Examples: `http_404`, `http_410`, `close_language:<phrase>`, `redirected_to_board`, `ats_empty_state`, `challenge_page`, `loginwalled`, `not_a_specific_posting`, `careers_homepage`, `collection_or_category`, `apply form present`, `no closure banner`, `sold-out`, `in-stock`, `ambiguous_html`. eBay adapter may add `ebay-ended`, `ebay-in-stock`, `ebay_availability_unknown`. There is no `invalid_url` code; errors are `{ "error": "<message>" }` (400 for bad URL/JSON, 502 fetch fail, 503 over capacity or payment processor, 504 timeout). On 503, wait for the `Retry-After` header (seconds) and retry. You were not charged. Do not treat 503 as `closed` or `unknown`.
+- `signals` - Evidence strings from production (not snake_case kit names). Examples: `http_404`, `http_410`, `close_language:<phrase>`, `redirected_to_board`, `ats_empty_state`, `ats_api_missing`, `ats_api_listed`, `challenge_page`, `loginwalled`, `not_a_specific_posting`, `careers_homepage`, `collection_or_category`, `apply form present`, `no closure banner`, `sold-out`, `in-stock`, `ambiguous_html`. eBay adapter may add `ebay-ended`, `ebay-in-stock`, `ebay_availability_unknown`. There is no `invalid_url` code; errors are `{ "error": "<message>" }` (400 for bad URL/JSON, 502 fetch fail, 503 over capacity or payment processor, 504 timeout). On 503, wait for the `Retry-After` header (seconds) and retry. You were not charged. Do not treat 503 as `closed` or `unknown`.
 - `http_status`, `canonical_url`, `checked_at`
 - `confidence` - 0 to 1
+- `price_usd` - Fixed price for this call (0.01 for verify routes)
+- `route` - API path after `/v1/` with no leading slash: `verify`, `verify/job`, or `verify/listing` (matches production Fly responses)
+- `watch` - Present on paid 200 only: `{ "suggest": "/v1/watch", "detector": "status_change", "price_usd": 2.5 }`
 
 **How to act on it:**
 - `live` → proceed (recommend, apply, add to cart)
