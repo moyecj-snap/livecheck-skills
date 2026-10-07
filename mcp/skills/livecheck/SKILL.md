@@ -27,7 +27,7 @@ description: |
 mcp:
   - agentcash
 metadata:
-  version: 3
+  version: 4
 ---
 
 # Livecheck: live status of listings, products, and job postings
@@ -248,7 +248,7 @@ agentcash.fetch(
   url="https://livecheck.fly.dev/v1/confirm",
   method="POST",
   body={
-    "url": "https://example.com/thank-you?ref=A1B2C3",
+    "url": "https://livecheck.fly.dev/demo/thank-you?ref=ABC123",
     "intent": "lead_submit"
   }
 )
@@ -263,7 +263,7 @@ agentcash.fetch(
 )
 ```
 
-`confirmed` requires a durable confirmation / ref / order id on the page. A thank-you message alone returns `unknown`. Every response includes a signed receipt verifiable at `GET /v1/receipt/{id}`.
+`confirmed` requires a durable confirmation / ref / order id printed in the page text of a 2xx page. A thank-you message alone returns `unknown`. A ref that appears only in the URL is not proof, and a 404 or other error page never returns `confirmed`. The demo page above is HTTP 200 and prints `Confirmation number: ABC123`, so it returns `confirmed` with `effect.id` `ABC123`. Every response includes a signed receipt verifiable at `GET /v1/receipt/{id}`.
 
 ## Cost Estimation
 
