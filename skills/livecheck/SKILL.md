@@ -25,7 +25,7 @@ description: |
 
   On HTTP 503, wait for the Retry-After header (seconds) and retry. For a list of URLs, send up to 8 verifies at a time (server concurrency default is 8; a short queue may absorb brief bursts).
 metadata:
-  version: 3
+  version: 4
 ---
 
 # Livecheck: live status of listings, products, and job postings
@@ -186,11 +186,11 @@ Callback is optional. If you have a public HTTPS endpoint, pass `callback.url` +
 Use after an agent submits a lead/contact/application form or completes a checkout. Pass the thank-you or order-status page URL.
 
 ```bash
-npx agentcash@latest fetch https://livecheck.fly.dev/v1/confirm -m POST -b '{"url": "https://example.com/thank-you?ref=A1B2C3", "intent": "lead_submit"}'
+npx agentcash@latest fetch https://livecheck.fly.dev/v1/confirm -m POST -b '{"url": "https://livecheck.fly.dev/demo/thank-you?ref=ABC123", "intent": "lead_submit"}'
 npx agentcash@latest fetch https://livecheck.fly.dev/v1/confirm/order -m POST -b '{"url": "https://shop.example.com/orders/48213", "intent": "order_placed"}'
 ```
 
-`confirmed` requires a durable confirmation / ref / order id on the page. A thank-you message alone returns `unknown`. Every response includes a signed receipt verifiable at `GET /v1/receipt/{id}`.
+`confirmed` requires a durable confirmation / ref / order id printed in the page text of a 2xx page. A thank-you message alone returns `unknown`. A ref that appears only in the URL is not proof, and a 404 or other error page never returns `confirmed`. The demo page above is HTTP 200 and prints `Confirmation number: ABC123`, so it returns `confirmed` with `effect.id` `ABC123`. Every response includes a signed receipt verifiable at `GET /v1/receipt/{id}`.
 
 ## Cost Estimation
 
