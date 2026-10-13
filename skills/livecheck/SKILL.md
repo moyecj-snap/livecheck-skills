@@ -1,37 +1,38 @@
 ---
 name: livecheck
 description: |
-  Primary use: clean a batch of job URLs before apply or outreach. Live status of a specific job posting, product page, or listing, read from the page itself right now. Verify accepts x402 (Base USDC) or MPP (Tempo USDC.e, chain 4217, tempo/charge, exactly $0.01, Stripe pays gas). No account or API key. Returns live / closed / unknown plus title and signals (in-stock, sold-out, apply form present, http_404). Also one-shot condition checks and 30-day URL watchers.
+  Primary use: clean a batch of job URLs before apply or outreach. Live status of a specific job posting, product page, or listing, read from the page itself right now. Verify accepts x402 (Base USDC) or MPP (Tempo USDC.e, chain 4217, tempo/charge, exactly $0.01, Stripe pays gas). No account or API key. Returns live / closed / unknown plus title and signals (in-stock, sold-out, apply form present, http_404). Also one-shot condition checks and 30-day URL watchers. Confirm (forms and orders) is a separate, optional use — not part of list cleaning.
 
   USE FOR:
   - Cleaning a batch of job URLs before apply or outreach (ghost jobs, stale board rows, scraped lists)
   - Click-time check that a job posting is still open before tailoring a resume, applying, or spending the user's credits
   - The same live / closed / unknown check across Greenhouse, Lever, Workday, Ashby, SmartRecruiters, and iCIMS
   - Checking whether a product page, eBay item, or Shopify listing is still available before recommending or buying it
-  - Confirming a search result (Google Shopping, job board, scraper output) isn't stale
+  - Checking whether a search result (Google Shopping, job board, scraper output) is still live (availability, not Confirm)
   - Checking whether a price crossed a threshold or a keyword appeared on a page, once
   - Watching a URL for 30 days and getting a signed webhook when it changes
+  - Optional, separate from list cleaning: Confirm that a form submission or order landed (POST /v1/confirm, /v1/confirm/order)
 
   TRIGGERS:
   - "clean this list", "which of these jobs are still open", "before I reach out", "ghost job"
-  - "is this job still open", "position filled", "still accepting applications", "sold out"
-  - "is this still available", "still live", "still in stock"
-  - "posting closed", "still hiring"
-  - "dead link", "404", "check these URLs", "which of these are live"
-  - "before I apply", "before I buy", "before scraping"
-  - "watch this page", "tell me when", "price drops below", "back in stock"
+  - "is this job still open", "is this listing still live", "check these job/listing links"
+  - "position filled", "still accepting applications", "sold out", "still in stock"
+  - "posting closed", "still hiring", "before I apply", "before I buy"
+  - "watch this job posting", "watch this listing", "price drops below", "back in stock"
 
-  Use `npx agentcash@latest fetch` for livecheck.fly.dev endpoints. Job and listing checks are $0.01 per URL; generic verify is $0.01; one-shot checks $0.02; watchers $2.50 for 30 days.
+  Use `npx agentcash@0.17.1 fetch` for livecheck.fly.dev endpoints. Job and listing checks are $0.01 per URL; generic verify is $0.01; one-shot checks $0.02; watchers $2.50 for 30 days.
 
   With MPP (Tempo): Paid answers, including the checked link, are kept for 24 hours so retries are safe, then deleted.
   On HTTP 503, wait for the Retry-After header (seconds) and retry. over_capacity and x402 processor_unavailable were not charged. An MPP 503 payment_unconfirmed means a possible charge is logged for refund; retrying with the same credential is safe and never double-charges. Do not treat 503 as closed or unknown. For a list of URLs, send up to 8 verifies at a time (server concurrency default is 8; a short queue may absorb brief bursts).
 metadata:
-  version: "4.1.0"
+  version: "4.1.1"
 ---
 
 # Livecheck: live status of listings, products, and job postings
 
-Version 4.1.0. The primary use is list cleaning: a batch of job URLs, checked before apply or outreach. Verify is exactly $0.01. No account or API key. Base URL: `https://livecheck.fly.dev`.
+Version 4.1.1. The primary use is list cleaning: a batch of job URLs, checked before apply or outreach. Verify is exactly $0.01. No account or API key. Base URL: `https://livecheck.fly.dev`.
+
+Try it free in a browser: https://livecheck.fly.dev/job?ref=clawhub
 
 Livecheck fetches the specific URL you already have and tells you, from the page itself, whether it's live right now. It is not a search engine: bring a URL from search, a scraper, a job board, or the user. Google Shopping, job boards, and scraped datasets are snapshots. Listings sell, postings close, and pages 404 between the crawl and your action. Livecheck reads the page at call time.
 
@@ -85,7 +86,7 @@ See [rules/getting-started.md](rules/getting-started.md) for installation and wa
 | Confirm a form submission landed | `https://livecheck.fly.dev/v1/confirm` | $0.10 | confirmed / failed / unknown, with a signed receipt |
 | Confirm an order exists | `https://livecheck.fly.dev/v1/confirm/order` | $0.25 | confirmed / failed / unknown, with a signed receipt |
 
-Run `npx agentcash@latest check <url>` before the first call to any endpoint to get the exact request schema.
+Run `npx agentcash@0.17.1 check <url>` before the first call to any endpoint to get the exact request schema.
 
 ## Examples
 
@@ -101,7 +102,7 @@ Primary use. You already have the posting URLs (search, a scraper, a board expor
 - [ ] Tailor, apply, or reach out only on `live`
 
 ```bash
-npx agentcash@latest fetch https://livecheck.fly.dev/v1/verify/job -m POST -b '{"url": "https://jobs.example.com/careers/12345"}'
+npx agentcash@0.17.1 fetch https://livecheck.fly.dev/v1/verify/job -m POST -b '{"url": "https://jobs.example.com/careers/12345"}'
 ```
 
 ### Check a product listing before recommending
@@ -111,7 +112,7 @@ npx agentcash@latest fetch https://livecheck.fly.dev/v1/verify/job -m POST -b '{
 - [ ] Recommend only `live` items; mention any that were `closed`
 
 ```bash
-npx agentcash@latest fetch https://livecheck.fly.dev/v1/verify/listing -m POST -b '{"url": "https://merchant.example.com/p/12345"}'
+npx agentcash@0.17.1 fetch https://livecheck.fly.dev/v1/verify/listing -m POST -b '{"url": "https://merchant.example.com/p/12345"}'
 ```
 
 ### Clean a mixed URL list
@@ -124,7 +125,7 @@ npx agentcash@latest fetch https://livecheck.fly.dev/v1/verify/listing -m POST -
 ## Job: is this posting still open?
 
 ```bash
-npx agentcash@latest fetch https://livecheck.fly.dev/v1/verify/job -m POST -b '{"url": "https://jobs.example.com/careers/12345"}'
+npx agentcash@0.17.1 fetch https://livecheck.fly.dev/v1/verify/job -m POST -b '{"url": "https://jobs.example.com/careers/12345"}'
 ```
 
 POST `{"url"}` for one specific job posting page. Works on company careers pages and applicant tracking systems such as Greenhouse, Lever, Workday, Ashby, SmartRecruiters, and iCIMS. Use it before tailoring a resume, before submitting an application, and to remove stale postings from job search results. Not a job search: bring the posting URL. Reads HTML only.
@@ -132,7 +133,7 @@ POST `{"url"}` for one specific job posting page. Works on company careers pages
 ## Listing: is this product still available or sold out?
 
 ```bash
-npx agentcash@latest fetch https://livecheck.fly.dev/v1/verify/listing -m POST -b '{"url": "https://www.ebay.com/itm/256789012345"}'
+npx agentcash@0.17.1 fetch https://livecheck.fly.dev/v1/verify/listing -m POST -b '{"url": "https://www.ebay.com/itm/256789012345"}'
 ```
 
 POST `{"url"}` for one specific product page or marketplace listing. Works on eBay item pages, Shopify product pages, and standard HTML product pages. Use it before recommending a product, before adding to cart or buying, and to remove sold-out or deleted items from shopping results. Not a product search: bring the item URL. Reads HTML only. Availability only, not legitimacy or fraud risk.
@@ -142,7 +143,7 @@ POST `{"url"}` for one specific product page or marketplace listing. Works on eB
 `POST /v1/verify` uses the same handler and response as `/v1/verify/job` and `/v1/verify/listing`. Prefer job or listing when the page is a posting or a product. Use verify for any other specific URL.
 
 ```bash
-npx agentcash@latest fetch https://livecheck.fly.dev/v1/verify -m POST -b '{"url": "https://example.com/item/12345"}'
+npx agentcash@0.17.1 fetch https://livecheck.fly.dev/v1/verify -m POST -b '{"url": "https://example.com/item/12345"}'
 ```
 
 **Parameters (job, listing, and verify):**
@@ -169,7 +170,7 @@ Livecheck reads HTML and HTTP status. It does not execute JavaScript, so single-
 ## Check: one-shot condition on a page
 
 ```bash
-npx agentcash@latest fetch https://livecheck.fly.dev/v1/check -m POST -b '{
+npx agentcash@0.17.1 fetch https://livecheck.fly.dev/v1/check -m POST -b '{
   "target": {"type": "url", "url": "https://shop.example.com/products/widget"},
   "condition": {"detector": "numeric_threshold", "params": {"selector": ".price", "op": "lt", "value": 120}}
 }'
@@ -186,7 +187,7 @@ Save `observation.hash` from the response and pass it as `baseline_hash` next ti
 ## Watch: 30-day watcher with webhook
 
 ```bash
-npx agentcash@latest fetch https://livecheck.fly.dev/v1/watch -m POST -b '{
+npx agentcash@0.17.1 fetch https://livecheck.fly.dev/v1/watch -m POST -b '{
   "target": {"type": "url", "url": "https://www.ebay.com/itm/256789012345"},
   "condition": {"detector": "status_change"},
   "callback": {"url": "https://your-agent.example.com/hooks/livecheck", "secret": "choose-a-secret"},
@@ -196,13 +197,13 @@ npx agentcash@latest fetch https://livecheck.fly.dev/v1/watch -m POST -b '{
 
 Callback is optional. If you have a public HTTPS endpoint, pass `callback.url` + `secret` and Livecheck HMAC-posts when the condition fires. If you omit `callback`, pull history with `GET /v1/watch/{id}/events` and header `X-Livecheck-Owner-Token`. The response returns an `owner_token` once; store it. If you only need a one-shot check, use `/v1/check` instead of a watcher.
 
-## Confirm: did the form or order actually go through?
+## Confirm (optional, separate from list cleaning): did the form or order actually go through?
 
-Use after an agent submits a lead/contact/application form or completes a checkout. Pass the thank-you or order-status page URL.
+Confirm is not part of list cleaning. Use it only after an agent submits a lead/contact/application form or completes a checkout. Pass the thank-you or order-status page URL.
 
 ```bash
-npx agentcash@latest fetch https://livecheck.fly.dev/v1/confirm -m POST -b '{"url": "https://livecheck.fly.dev/demo/thank-you?ref=ABC123", "intent": "lead_submit"}'
-npx agentcash@latest fetch https://livecheck.fly.dev/v1/confirm/order -m POST -b '{"url": "https://shop.example.com/orders/48213", "intent": "order_placed"}'
+npx agentcash@0.17.1 fetch https://livecheck.fly.dev/v1/confirm -m POST -b '{"url": "https://livecheck.fly.dev/demo/thank-you?ref=ABC123", "intent": "lead_submit"}'
+npx agentcash@0.17.1 fetch https://livecheck.fly.dev/v1/confirm/order -m POST -b '{"url": "https://shop.example.com/orders/48213", "intent": "order_placed"}'
 ```
 
 `confirmed` requires a durable confirmation / ref / order id printed in the page text of a 2xx page. A thank-you message alone returns `unknown`. A ref that appears only in the URL is not proof, and a 404 or other error page never returns `confirmed`. The demo page above is HTTP 200 and prints `Confirmation number: ABC123`, so it returns `confirmed` with `effect.id` `ABC123`. Every response includes a signed receipt verifiable at `GET /v1/receipt/{id}`.
