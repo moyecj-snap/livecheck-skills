@@ -1,5 +1,7 @@
 # Livecheck Skills
 
+Try it free in a browser: https://livecheck.fly.dev/job?ref=clawhub
+
 Version 4.1.0. Agent skills for [Livecheck](https://livecheck.fly.dev): live status of listings, product pages, and job postings, read from the page at call time. Verify is exactly $0.01, paid with x402 (Base USDC) or MPP (Tempo USDC.e, chain 4217, method `tempo/charge`; Stripe pays gas). Check, watch, and confirm stay x402 on Base. No account, no API key. Wallet: [agentcash](https://agentcash.dev).
 
 With MPP (Tempo): Paid answers, including the checked link, are kept for 24 hours so retries are safe, then deleted.
@@ -25,7 +27,7 @@ On HTTP 503, wait for the `Retry-After` header (seconds) and retry. Do not treat
 Primary use. One call per posting URL. Send up to 8 verifies at a time. On HTTP 503, wait for `Retry-After` and retry. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retrying with the same credential is safe and never double-charges.
 
 ```bash
-npx agentcash@latest fetch https://livecheck.fly.dev/v1/verify/job -m POST -b '{"url": "https://jobs.example.com/careers/12345"}'
+npx agentcash@0.17.1 fetch https://livecheck.fly.dev/v1/verify/job -m POST -b '{"url": "https://jobs.example.com/careers/12345"}'
 ```
 
 Tailor, apply, or reach out only where `status` is `live`.
@@ -50,14 +52,14 @@ npx skills add moyecj-snap/livecheck-skills --all --yes
 ### MCP mode
 
 ```bash
-npx agentcash@latest install -y
+npx agentcash@0.17.1 install -y
 npx skills add moyecj-snap/livecheck-skills/mcp --all --yes
 ```
 
 Or add the origin directly to your agentcash wallet:
 
 ```bash
-npx agentcash@latest add https://livecheck.fly.dev
+npx agentcash@0.17.1 add https://livecheck.fly.dev
 ```
 
 ## What it does

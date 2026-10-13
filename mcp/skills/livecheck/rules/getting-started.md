@@ -2,6 +2,8 @@
 
 Version 4.1.0. Verify is exactly $0.01: x402 (USDC on Base) or MPP (Tempo USDC.e, chain 4217, method `tempo/charge`; Stripe pays gas). Check, watch, and confirm stay x402 on Base. No account or API key. Base URL: `https://livecheck.fly.dev`.
 
+Try it free in a browser: https://livecheck.fly.dev/job?ref=clawhub
+
 With MPP (Tempo): Paid answers, including the checked link, are kept for 24 hours so retries are safe, then deleted.
 
 ## When to use Livecheck instead of checking it yourself
@@ -36,7 +38,7 @@ For a product page, use `POST /v1/verify/listing`. For any other specific URL, u
 
 1. **Install the agentcash MCP:**
    ```bash
-   npx agentcash@latest install --client claude-code -y
+   npx agentcash@0.17.1 install --client claude-code -y
    ```
 
 2. **Check wallet:**

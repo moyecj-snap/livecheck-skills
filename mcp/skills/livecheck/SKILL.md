@@ -35,6 +35,8 @@ metadata:
 
 Version 4.1.0. The primary use is list cleaning: a batch of job URLs, checked before apply or outreach. Verify is exactly $0.01. No account or API key. Base URL: `https://livecheck.fly.dev`.
 
+Try it free in a browser: https://livecheck.fly.dev/job?ref=clawhub
+
 Livecheck fetches the specific URL you already have and tells you, from the page itself, whether it's live right now. It is not a search engine: bring a URL from search, a scraper, a job board, or the user. Google Shopping, job boards, and scraped datasets are snapshots. Listings sell, postings close, and pages 404 between the crawl and your action. Livecheck reads the page at call time.
 
 For a job posting, call `POST /v1/verify/job`. For a product page (eBay, Shopify, or other HTML product page), call `POST /v1/verify/listing`. `POST /v1/verify` is the same handler for any other specific URL.

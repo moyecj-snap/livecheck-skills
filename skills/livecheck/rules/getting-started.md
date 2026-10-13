@@ -2,6 +2,8 @@
 
 Version 4.1.0. Verify is exactly $0.01: x402 (USDC on Base) or MPP (Tempo USDC.e, chain 4217, method `tempo/charge`; Stripe pays gas). Check, watch, and confirm stay x402 on Base. No account or API key. Base URL: `https://livecheck.fly.dev`.
 
+Try it free in a browser: https://livecheck.fly.dev/job?ref=clawhub
+
 With MPP (Tempo): Paid answers, including the checked link, are kept for 24 hours so retries are safe, then deleted.
 
 ## When to use Livecheck instead of checking it yourself
@@ -21,7 +23,7 @@ Fetch the page yourself when you need the posting body to tailor or quote. Livec
 Primary use. One call per posting. Send up to 8 verifies at a time. On HTTP 503, wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as closed or unknown. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retrying with the same credential is safe and never double-charges.
 
 ```bash
-npx agentcash@latest fetch https://livecheck.fly.dev/v1/verify/job -m POST -b '{"url": "https://jobs.example.com/careers/12345"}'
+npx agentcash@0.17.1 fetch https://livecheck.fly.dev/v1/verify/job -m POST -b '{"url": "https://jobs.example.com/careers/12345"}'
 ```
 
 For a product page, use `POST /v1/verify/listing`. For any other specific URL, use `POST /v1/verify`.
@@ -30,21 +32,21 @@ For a product page, use `POST /v1/verify/listing`. For any other specific URL, u
 
 1. **Install the agentcash CLI:**
    ```bash
-   npm install -g agentcash
+   npm install -g agentcash@0.17.1
    ```
 
 2. **Check wallet:**
    ```bash
-   npx agentcash@latest balance
+   npx agentcash@0.17.1 balance
    ```
 
 3. **Fund wallet** (if needed):
-   - Redeem invite: `npx agentcash@latest redeem YOUR_CODE`
-   - Or run `npx agentcash@latest accounts` to get Base deposit links and wallet addresses
+   - Redeem invite: `npx agentcash@0.17.1 redeem YOUR_CODE`
+   - Or run `npx agentcash@0.17.1 accounts` to get Base deposit links and wallet addresses
 
 4. **Confirm the schema before the first call:**
    ```bash
-   npx agentcash@latest check https://livecheck.fly.dev/v1/verify
+   npx agentcash@0.17.1 check https://livecheck.fly.dev/v1/verify
    ```
 
 Verify settles exactly $0.01 in USDC on Base (x402) or USDC.e on Tempo (MPP, chain 4217, method `tempo/charge`; Stripe pays gas). Check, watch, and confirm settle in USDC on Base via x402.
@@ -53,7 +55,7 @@ Verify settles exactly $0.01 in USDC on Base (x402) or USDC.e on Tempo (MPP, cha
 
 | Issue | Solution |
 |-------|----------|
-| "Command not found" | Run `npm install -g agentcash` |
+| "Command not found" | Run `npm install -g agentcash@0.17.1` |
 | "Insufficient balance" | Fund wallet with USDC on Base |
 | "Payment failed" | Check balance, retry (transient errors) |
 | 400 `invalid_url` | Use one specific item URL, not a search or category page |
