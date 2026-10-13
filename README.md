@@ -1,6 +1,8 @@
 # Livecheck Skills
 
-Version 3. Agent skills for [Livecheck](https://livecheck.fly.dev): live status of listings, product pages, and job postings, read from the page at call time. $0.01 per posting, paid in USDC on Base via x402. No account, no API key. Wallet: [agentcash](https://agentcash.dev).
+Version 4.1.0. Agent skills for [Livecheck](https://livecheck.fly.dev): live status of listings, product pages, and job postings, read from the page at call time. Verify is exactly $0.01, paid with x402 (Base USDC) or MPP (Tempo USDC.e, chain 4217, method `tempo/charge`; Stripe pays gas). Check, watch, and confirm stay x402 on Base. No account, no API key. Wallet: [agentcash](https://agentcash.dev).
+
+With MPP (Tempo): Paid answers, including the checked link, are kept for 24 hours so retries are safe, then deleted.
 
 ## When to use Livecheck instead of checking it yourself
 
@@ -14,13 +16,13 @@ You already have a specific URL. Call Livecheck when the next step is apply, out
 
 Fetch the page yourself when you need the posting body (requirements, salary, location) to tailor or quote. Livecheck returns status, title, and signals. It does not log in, submit forms, or replace the job description. Bring one specific item URL; it is not a job search. After a real form submit or checkout, Confirm is a separate call.
 
-On HTTP 503, wait for the `Retry-After` header (seconds) and retry. You were not charged. Do not treat 503 as closed or unknown. For a list of URLs, send up to 8 verifies at a time (server concurrency default is 8; a short queue may absorb brief bursts).
+On HTTP 503, wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as closed or unknown. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retrying with the same credential is safe and never double-charges. For a list of URLs, send up to 8 verifies at a time (server concurrency default is 8; a short queue may absorb brief bursts).
 
 ## Examples
 
 ### Clean a batch of job URLs before apply or outreach
 
-Primary use. One call per posting URL. Send up to 8 verifies at a time. On HTTP 503, wait for `Retry-After` and retry.
+Primary use. One call per posting URL. Send up to 8 verifies at a time. On HTTP 503, wait for `Retry-After` and retry. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retrying with the same credential is safe and never double-charges.
 
 ```bash
 npx agentcash@latest fetch https://livecheck.fly.dev/v1/verify/job -m POST -b '{"url": "https://jobs.example.com/careers/12345"}'
@@ -62,14 +64,14 @@ npx agentcash@latest add https://livecheck.fly.dev
 
 | Endpoint | Price | Use |
 |---|---|---|
-| `POST /v1/verify/job` | $0.01 | Is this job posting still open? |
-| `POST /v1/verify/listing` | $0.01 | Is this product listing still available or sold out? |
-| `POST /v1/verify` | $0.01 | Is this other specific URL still live? |
+| `POST /v1/verify/job` | $0.01 exactly (x402 or MPP) | Is this job posting still open? |
+| `POST /v1/verify/listing` | $0.01 exactly (x402 or MPP) | Is this product listing still available or sold out? |
+| `POST /v1/verify` | $0.01 exactly (x402 or MPP) | Is this other specific URL still live? |
 | `POST /v1/check` | $0.02 | One-shot keyword, price-threshold, or change check |
 | `POST /v1/watch` | $2.50 | 30-day URL watcher with signed webhook |
 | `POST /v1/confirm` | $0.10 | Did the form submission land? |
 | `POST /v1/confirm/order` | $0.25 | Does the order exist? |
 
-On HTTP 503 from verify, wait for the `Retry-After` header (seconds) and retry. You were not charged. Do not treat 503 as closed or unknown. For a list of URLs, send up to 8 verifies at a time (server concurrency default is 8; a short queue may absorb brief bursts).
+On HTTP 503 from verify, wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as closed or unknown. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retrying with the same credential is safe and never double-charges. For a list of URLs, send up to 8 verifies at a time (server concurrency default is 8; a short queue may absorb brief bursts).
 
 Full schema: https://livecheck.fly.dev/openapi.json · Agent guide: https://livecheck.fly.dev/llms.txt · Live stats: https://livecheck.fly.dev/stats

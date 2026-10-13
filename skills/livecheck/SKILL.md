@@ -1,7 +1,7 @@
 ---
 name: livecheck
 description: |
-  Primary use: clean a batch of job URLs before apply or outreach. Live status of a specific job posting, product page, or listing, read from the page itself right now, via x402. $0.01 per posting, no account or API key. Returns live / closed / unknown plus title and signals (in-stock, sold-out, apply form present, http_404). Also one-shot condition checks and 30-day URL watchers.
+  Primary use: clean a batch of job URLs before apply or outreach. Live status of a specific job posting, product page, or listing, read from the page itself right now. Verify accepts x402 (Base USDC) or MPP (Tempo USDC.e, chain 4217, tempo/charge, exactly $0.01, Stripe pays gas). No account or API key. Returns live / closed / unknown plus title and signals (in-stock, sold-out, apply form present, http_404). Also one-shot condition checks and 30-day URL watchers.
 
   USE FOR:
   - Cleaning a batch of job URLs before apply or outreach (ghost jobs, stale board rows, scraped lists)
@@ -23,18 +23,30 @@ description: |
 
   Use `npx agentcash@latest fetch` for livecheck.fly.dev endpoints. Job and listing checks are $0.01 per URL; generic verify is $0.01; one-shot checks $0.02; watchers $2.50 for 30 days.
 
-  On HTTP 503, wait for the Retry-After header (seconds) and retry. For a list of URLs, send up to 8 verifies at a time (server concurrency default is 8; a short queue may absorb brief bursts).
+  With MPP (Tempo): Paid answers, including the checked link, are kept for 24 hours so retries are safe, then deleted.
+  On HTTP 503, wait for the Retry-After header (seconds) and retry. over_capacity and x402 processor_unavailable were not charged. An MPP 503 payment_unconfirmed means a possible charge is logged for refund; retrying with the same credential is safe and never double-charges. Do not treat 503 as closed or unknown. For a list of URLs, send up to 8 verifies at a time (server concurrency default is 8; a short queue may absorb brief bursts).
 metadata:
-  version: 4
+  version: "4.1.0"
 ---
 
 # Livecheck: live status of listings, products, and job postings
 
-Version 3. The primary use is list cleaning: a batch of job URLs, checked before apply or outreach. $0.01 per posting, x402 on Base, no account or API key. Base URL: `https://livecheck.fly.dev`.
+Version 4.1.0. The primary use is list cleaning: a batch of job URLs, checked before apply or outreach. Verify is exactly $0.01. No account or API key. Base URL: `https://livecheck.fly.dev`.
 
 Livecheck fetches the specific URL you already have and tells you, from the page itself, whether it's live right now. It is not a search engine: bring a URL from search, a scraper, a job board, or the user. Google Shopping, job boards, and scraped datasets are snapshots. Listings sell, postings close, and pages 404 between the crawl and your action. Livecheck reads the page at call time.
 
 For a job posting, call `POST /v1/verify/job`. For a product page (eBay, Shopify, or other HTML product page), call `POST /v1/verify/listing`. `POST /v1/verify` is the same handler for any other specific URL.
+
+## Verify payment
+
+`POST /v1/verify`, `POST /v1/verify/job`, and `POST /v1/verify/listing` accept two rails. Each charges exactly $0.01. Send one credential: x402 `PAYMENT-SIGNATURE` or MPP `Authorization: Payment`, not both.
+
+- **x402** — USDC on Base (agentcash).
+- **MPP** — Tempo USDC.e, chain 4217, method `tempo/charge`. Stripe pays Tempo gas.
+
+With MPP (Tempo): Paid answers, including the checked link, are kept for 24 hours so retries are safe, then deleted.
+
+Check, watch, renew, chain top-up, and confirm stay x402 on Base.
 
 ## When to use Livecheck instead of checking it yourself
 
@@ -50,7 +62,10 @@ Fetch the page yourself when you need the posting body (requirements, salary, lo
 
 ## Capacity
 
-`POST /v1/verify`, `POST /v1/verify/job`, and `POST /v1/verify/listing` return HTTP 503 with a `Retry-After` header (seconds) when the check queue is full, a queued check waited too long, or the payment processor times out or errors. On 503, wait for `Retry-After` and retry. You were not charged. Do not treat 503 as `closed` or `unknown`.
+`POST /v1/verify`, `POST /v1/verify/job`, and `POST /v1/verify/listing` return HTTP 503 with a `Retry-After` header (seconds) when the check queue is full, a queued check waited too long, or the payment processor times out or errors. On 503, wait for `Retry-After` and retry. Do not treat 503 as `closed` or `unknown`.
+
+- 503 `over_capacity` or x402 `processor_unavailable`: you were not charged.
+- 503 MPP `payment_unconfirmed`: the payment could not be confirmed. A possible charge is logged for refund, and retrying with the same credential is safe and never double-charges.
 
 For a list of URLs, send up to 8 verifies at a time. Server concurrency default is 8; a short queue may absorb brief bursts.
 
@@ -62,9 +77,9 @@ See [rules/getting-started.md](rules/getting-started.md) for installation and wa
 
 | Task | Endpoint | Price | Returns |
 |------|----------|-------|---------|
-| Is this job posting still open? Check one specific job URL before applying ($0.01) | `POST https://livecheck.fly.dev/v1/verify/job` | $0.01 | live / closed / unknown, title, signals, confidence |
-| Is this product listing still available or sold out? Check one eBay, Shopify, or product page URL ($0.01) | `POST https://livecheck.fly.dev/v1/verify/listing` | $0.01 | live / closed / unknown, title, signals, confidence |
-| Is this URL live? | `POST https://livecheck.fly.dev/v1/verify` | $0.01 | live / closed / unknown, title, signals, confidence |
+| Is this job posting still open? Check one specific job URL before applying ($0.01) | `POST https://livecheck.fly.dev/v1/verify/job` | $0.01 exactly (x402 or MPP) | live / closed / unknown, title, signals, confidence |
+| Is this product listing still available or sold out? Check one eBay, Shopify, or product page URL ($0.01) | `POST https://livecheck.fly.dev/v1/verify/listing` | $0.01 exactly (x402 or MPP) | live / closed / unknown, title, signals, confidence |
+| Is this URL live? | `POST https://livecheck.fly.dev/v1/verify` | $0.01 exactly (x402 or MPP) | live / closed / unknown, title, signals, confidence |
 | One-shot condition check | `https://livecheck.fly.dev/v1/check` | $0.02 | fired true/false for a keyword, price threshold, text change, or status change |
 | Watch a URL for 30 days | `https://livecheck.fly.dev/v1/watch` | $2.50 | watcher id; signed webhook when the condition fires |
 | Confirm a form submission landed | `https://livecheck.fly.dev/v1/confirm` | $0.10 | confirmed / failed / unknown, with a signed receipt |
@@ -80,7 +95,7 @@ Primary use. You already have the posting URLs (search, a scraper, a board expor
 
 - [ ] `POST /v1/verify/job` once per URL
 - [ ] Send up to 8 verifies at a time. Server concurrency default is 8; a short queue may absorb brief bursts.
-- [ ] On HTTP 503, wait for the `Retry-After` header (seconds) and retry. You were not charged. Do not treat 503 as `closed` or `unknown`.
+- [ ] On HTTP 503, wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as `closed` or `unknown`. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retrying with the same credential is safe and never double-charges.
 - [ ] Skip `closed` (position filled, no longer accepting applications, expired, 404)
 - [ ] Flag `unknown` for the user
 - [ ] Tailor, apply, or reach out only on `live`
@@ -103,7 +118,7 @@ npx agentcash@latest fetch https://livecheck.fly.dev/v1/verify/listing -m POST -
 
 - [ ] Job postings: `POST /v1/verify/job`. Product pages: `POST /v1/verify/listing`. Other specific URLs: `POST /v1/verify`. One call per URL.
 - [ ] Send up to 8 verifies at a time. Server concurrency default is 8; a short queue may absorb brief bursts.
-- [ ] On HTTP 503, wait for the `Retry-After` header (seconds) and retry. You were not charged. Do not treat 503 as `closed` or `unknown`.
+- [ ] On HTTP 503, wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as `closed` or `unknown`. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retrying with the same credential is safe and never double-charges.
 - [ ] Return three groups: live, closed, unknown
 
 ## Job: is this posting still open?
@@ -136,7 +151,7 @@ npx agentcash@latest fetch https://livecheck.fly.dev/v1/verify -m POST -b '{"url
 **Returns:**
 - `status` - `live`, `closed`, or `unknown`
 - `title` - Page title of the item
-- `signals` - Evidence strings from production (not snake_case kit names). Examples: `http_404`, `http_410`, `close_language:<phrase>`, `redirected_to_board`, `ats_empty_state`, `ats_api_missing`, `ats_api_listed`, `challenge_page`, `loginwalled`, `not_a_specific_posting`, `careers_homepage`, `collection_or_category`, `apply form present`, `no closure banner`, `sold-out`, `in-stock`, `ambiguous_html`. eBay adapter may add `ebay-ended`, `ebay-in-stock`, `ebay_availability_unknown`. There is no `invalid_url` code; errors are `{ "error": "<message>" }` (400 for bad URL/JSON, 502 fetch fail, 503 over capacity or payment processor, 504 timeout). On 503, wait for the `Retry-After` header (seconds) and retry. You were not charged. Do not treat 503 as `closed` or `unknown`.
+- `signals` - Evidence strings from production (not snake_case kit names). Examples: `http_404`, `http_410`, `close_language:<phrase>`, `redirected_to_board`, `ats_empty_state`, `ats_api_missing`, `ats_api_listed`, `challenge_page`, `loginwalled`, `not_a_specific_posting`, `careers_homepage`, `collection_or_category`, `apply form present`, `no closure banner`, `sold-out`, `in-stock`, `ambiguous_html`. eBay adapter may add `ebay-ended`, `ebay-in-stock`, `ebay_availability_unknown`. There is no `invalid_url` code; errors are `{ "error": "<message>" }` (400 for bad URL/JSON, 502 fetch fail, 503 over capacity, x402 payment processor, or MPP `payment_unconfirmed`, 504 timeout). On 503, wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as `closed` or `unknown`. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retrying with the same credential is safe and never double-charges.
 - `http_status`, `canonical_url`, `checked_at`
 - `confidence` - 0 to 1
 - `price_usd` - Fixed price for this call (0.01 for verify routes)
@@ -147,7 +162,7 @@ npx agentcash@latest fetch https://livecheck.fly.dev/v1/verify -m POST -b '{"url
 - `live` → proceed (recommend, apply, add to cart)
 - `closed` → drop it and tell the user it's no longer available
 - `unknown` → the page couldn't be read reliably (login wall, heavy JavaScript, bot block). Say so; don't guess
-- HTTP 503 → wait for the `Retry-After` header (seconds) and retry. You were not charged. Do not treat 503 as `closed` or `unknown`
+- HTTP 503 → wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as `closed` or `unknown`. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retrying with the same credential is safe and never double-charges.
 
 Livecheck reads HTML and HTTP status. It does not execute JavaScript, so single-page apps may return `unknown`. Status means availability only, not legitimacy or fraud risk.
 

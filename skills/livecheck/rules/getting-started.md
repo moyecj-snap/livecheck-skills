@@ -1,6 +1,8 @@
 # Getting Started
 
-Version 3. $0.01 per posting, x402 on Base, no account or API key. Base URL: `https://livecheck.fly.dev`.
+Version 4.1.0. Verify is exactly $0.01: x402 (USDC on Base) or MPP (Tempo USDC.e, chain 4217, method `tempo/charge`; Stripe pays gas). Check, watch, and confirm stay x402 on Base. No account or API key. Base URL: `https://livecheck.fly.dev`.
+
+With MPP (Tempo): Paid answers, including the checked link, are kept for 24 hours so retries are safe, then deleted.
 
 ## When to use Livecheck instead of checking it yourself
 
@@ -16,7 +18,7 @@ Fetch the page yourself when you need the posting body to tailor or quote. Livec
 
 ## Clean a batch of job URLs before apply or outreach
 
-Primary use. One call per posting. Send up to 8 verifies at a time. On HTTP 503, wait for the `Retry-After` header (seconds) and retry. You were not charged. Do not treat 503 as closed or unknown.
+Primary use. One call per posting. Send up to 8 verifies at a time. On HTTP 503, wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as closed or unknown. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retrying with the same credential is safe and never double-charges.
 
 ```bash
 npx agentcash@latest fetch https://livecheck.fly.dev/v1/verify/job -m POST -b '{"url": "https://jobs.example.com/careers/12345"}'
@@ -45,7 +47,7 @@ For a product page, use `POST /v1/verify/listing`. For any other specific URL, u
    npx agentcash@latest check https://livecheck.fly.dev/v1/verify
    ```
 
-Livecheck settles in USDC on Base.
+Verify settles exactly $0.01 in USDC on Base (x402) or USDC.e on Tempo (MPP, chain 4217, method `tempo/charge`; Stripe pays gas). Check, watch, and confirm settle in USDC on Base via x402.
 
 ## Troubleshooting
 
@@ -56,6 +58,6 @@ Livecheck settles in USDC on Base.
 | "Payment failed" | Check balance, retry (transient errors) |
 | 400 `invalid_url` | Use one specific item URL, not a search or category page |
 | `status: unknown` | Page is login-walled, JavaScript-only, or blocked. Report it as unknown; don't retry in a loop |
-| HTTP 503 | Wait for the `Retry-After` header (seconds) and retry. You were not charged. Do not treat 503 as closed or unknown |
+| HTTP 503 | Wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as closed or unknown. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retrying with the same credential is safe and never double-charges |
 | A list of URLs | Send up to 8 verifies at a time. Server concurrency default is 8; a short queue may absorb brief bursts |
 | 400 `unsupported_intent` on confirm | `order_placed` goes to `/v1/confirm/order`; `lead_submit` and `listing_published` go to `/v1/confirm` |
