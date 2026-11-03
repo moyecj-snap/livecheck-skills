@@ -2,7 +2,9 @@
 
 Try it free in a browser: https://livecheck.fly.dev/job?ref=clawhub
 
-Version 4.1.1. Agent skills for [Livecheck](https://livecheck.fly.dev): live status of listings, product pages, and job postings, read from the page at call time. Verify is exactly $0.01, paid with x402 (Base USDC) or MPP (Tempo USDC.e, chain 4217, method `tempo/charge`; Stripe pays gas). Check, watch, and confirm stay x402 on Base. No account, no API key. Wallet: [agentcash](https://agentcash.dev).
+Version 4.1.1. Agent skills for [Livecheck](https://livecheck.fly.dev): live status of listings, product pages, and job postings, read from the page at call time. Verify is exactly $0.01, paid with x402 (Base USDC) or MPP (Tempo USDC.e, chain 4217, method `tempo/charge`; Stripe pays gas). Check, watch, and confirm stay x402 on Base. Wallet calls need no account or API key. Wallet: [agentcash](https://agentcash.dev).
+
+No wallet yet? Sign in with GitHub at livecheck.fly.dev/keys for 200 free checks, no wallet needed. A starter key covers `POST /v1/verify`, `/v1/verify/job`, and `/v1/verify/listing` (200 checks over 30 days); send it as `Authorization: Bearer <key>`. Check, watch, and confirm stay on a wallet. When the checks run out, call the same route without the key to pay with a wallet.
 
 With MPP (Tempo): Paid answers, including the checked link, are kept for 24 hours so retries are safe, then deleted.
 
