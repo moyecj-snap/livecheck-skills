@@ -23,7 +23,7 @@ description: |
   Use `npx agentcash@0.17.1 fetch` for livecheck.fly.dev endpoints. Job and listing checks are $0.01 per URL; generic verify is $0.01; one-shot checks $0.02; watchers $2.50 for 30 days.
 
   With MPP (Tempo): Paid answers, including the checked link, are kept for 24 hours so retries are safe, then deleted.
-  On HTTP 503, wait for the Retry-After header (seconds) and retry. over_capacity and x402 processor_unavailable were not charged. An MPP 503 payment_unconfirmed means a possible charge is logged for refund; retrying with the same credential is safe and never double-charges. Do not treat 503 as closed or unknown. For a list of URLs, send up to 8 verifies at a time (server concurrency default is 8; a short queue may absorb brief bursts).
+  On HTTP 503, wait for the Retry-After header (seconds) and retry. over_capacity and x402 processor_unavailable were not charged. An MPP 503 payment_unconfirmed means a possible charge is logged for refund; retry with the same credential, not a new payment. Do not treat 503 as closed or unknown. For a list of URLs, send up to 8 verifies at a time (server concurrency default is 8; a short queue may absorb brief bursts).
 metadata:
   version: "4.1.1"
 ---
@@ -66,7 +66,7 @@ Fetch the page yourself when you need the posting body (requirements, salary, lo
 `POST /v1/verify`, `POST /v1/verify/job`, and `POST /v1/verify/listing` return HTTP 503 with a `Retry-After` header (seconds) when the check queue is full, a queued check waited too long, or the payment processor times out or errors. On 503, wait for `Retry-After` and retry. Do not treat 503 as `closed` or `unknown`.
 
 - 503 `over_capacity` or x402 `processor_unavailable`: you were not charged.
-- 503 MPP `payment_unconfirmed`: the payment could not be confirmed. A possible charge is logged for refund, and retrying with the same credential is safe and never double-charges.
+- 503 MPP `payment_unconfirmed`: the payment could not be confirmed. A possible charge is logged for refund. Retry with the same credential, not a new payment.
 
 For a list of URLs, send up to 8 verifies at a time. Server concurrency default is 8; a short queue may absorb brief bursts.
 
@@ -96,7 +96,7 @@ Primary use. You already have the posting URLs (search, a scraper, a board expor
 
 - [ ] `POST /v1/verify/job` once per URL
 - [ ] Send up to 8 verifies at a time. Server concurrency default is 8; a short queue may absorb brief bursts.
-- [ ] On HTTP 503, wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as `closed` or `unknown`. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retrying with the same credential is safe and never double-charges.
+- [ ] On HTTP 503, wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as `closed` or `unknown`. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retry with the same credential, not a new payment.
 - [ ] Skip `closed` (position filled, no longer accepting applications, expired, 404)
 - [ ] Flag `unknown` for the user
 - [ ] Tailor, apply, or reach out only on `live`
@@ -119,7 +119,7 @@ npx agentcash@0.17.1 fetch https://livecheck.fly.dev/v1/verify/listing -m POST -
 
 - [ ] Job postings: `POST /v1/verify/job`. Product pages: `POST /v1/verify/listing`. Other specific URLs: `POST /v1/verify`. One call per URL.
 - [ ] Send up to 8 verifies at a time. Server concurrency default is 8; a short queue may absorb brief bursts.
-- [ ] On HTTP 503, wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as `closed` or `unknown`. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retrying with the same credential is safe and never double-charges.
+- [ ] On HTTP 503, wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as `closed` or `unknown`. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retry with the same credential, not a new payment.
 - [ ] Return three groups: live, closed, unknown
 
 ## Job: is this posting still open?
@@ -152,7 +152,7 @@ npx agentcash@0.17.1 fetch https://livecheck.fly.dev/v1/verify -m POST -b '{"url
 **Returns:**
 - `status` - `live`, `closed`, or `unknown`
 - `title` - Page title of the item
-- `signals` - Evidence strings from production (not snake_case kit names). Examples: `http_404`, `http_410`, `close_language:<phrase>`, `redirected_to_board`, `ats_empty_state`, `ats_api_missing`, `ats_api_listed`, `challenge_page`, `loginwalled`, `not_a_specific_posting`, `careers_homepage`, `collection_or_category`, `apply form present`, `no closure banner`, `sold-out`, `in-stock`, `ambiguous_html`. eBay adapter may add `ebay-ended`, `ebay-in-stock`, `ebay_availability_unknown`. There is no `invalid_url` code; errors are `{ "error": "<message>" }` (400 for bad URL/JSON, 502 fetch fail, 503 over capacity, x402 payment processor, or MPP `payment_unconfirmed`, 504 timeout). On 503, wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as `closed` or `unknown`. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retrying with the same credential is safe and never double-charges.
+- `signals` - Evidence strings from production (not snake_case kit names). Examples: `http_404`, `http_410`, `close_language:<phrase>`, `redirected_to_board`, `ats_empty_state`, `ats_api_missing`, `ats_api_listed`, `challenge_page`, `loginwalled`, `not_a_specific_posting`, `careers_homepage`, `collection_or_category`, `apply form present`, `no closure banner`, `sold-out`, `in-stock`, `ambiguous_html`. eBay adapter may add `ebay-ended`, `ebay-in-stock`, `ebay_availability_unknown`. There is no `invalid_url` code; errors are `{ "error": "<message>" }` (400 for bad URL/JSON, 502 fetch fail, 503 over capacity, x402 payment processor, or MPP `payment_unconfirmed`, 504 timeout). On 503, wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as `closed` or `unknown`. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retry with the same credential, not a new payment.
 - `http_status`, `canonical_url`, `checked_at`
 - `confidence` - 0 to 1
 - `price_usd` - Fixed price for this call (0.01 for verify routes)
@@ -163,7 +163,7 @@ npx agentcash@0.17.1 fetch https://livecheck.fly.dev/v1/verify -m POST -b '{"url
 - `live` → proceed (recommend, apply, add to cart)
 - `closed` → drop it and tell the user it's no longer available
 - `unknown` → the page couldn't be read reliably (login wall, heavy JavaScript, bot block). Say so; don't guess
-- HTTP 503 → wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as `closed` or `unknown`. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retrying with the same credential is safe and never double-charges.
+- HTTP 503 → wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as `closed` or `unknown`. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retry with the same credential, not a new payment.
 
 Livecheck reads HTML and HTTP status. It does not execute JavaScript, so single-page apps may return `unknown`. Status means availability only, not legitimacy or fraud risk.
 
