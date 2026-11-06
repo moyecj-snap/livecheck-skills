@@ -58,6 +58,16 @@ npx agentcash@0.17.1 install -y
 npx skills add moyecj-snap/livecheck-skills/mcp --all --yes
 ```
 
+### Cursor plugin
+
+Cursor Marketplace installs this repository as a plugin. The manifest is `.cursor-plugin/plugin.json` and its `logo` is `.cursor-plugin/logo.svg`. Root [`mcp.json`](https://github.com/moyecj-snap/livecheck-skills/blob/main/mcp.json) is the file Stripe Directory's MCP action should link. It starts the stdio client with `${CURSOR_PLUGIN_ROOT}`:
+
+```json
+"args": ["-y", "tsx", "${CURSOR_PLUGIN_ROOT}/src/mcp.ts"]
+```
+
+The client calls `https://livecheck.fly.dev`. Unpaid calls return HTTP 402. From a checkout of this repo: `npm install`, then `npm test`.
+
 Or add the origin directly to your agentcash wallet:
 
 ```bash
@@ -79,3 +89,7 @@ npx agentcash@0.17.1 add https://livecheck.fly.dev
 On HTTP 503 from verify, wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as closed or unknown. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retry with the same credential, not a new payment. For a list of URLs, send up to 8 verifies at a time (server concurrency default is 8; a short queue may absorb brief bursts).
 
 Full schema: https://livecheck.fly.dev/openapi.json · Agent guide: https://livecheck.fly.dev/llms.txt · Live stats: https://livecheck.fly.dev/stats
+
+## License
+
+MIT. See [LICENSE](LICENSE).
