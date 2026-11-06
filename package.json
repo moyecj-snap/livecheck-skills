@@ -1,0 +1,25 @@
+{
+  "name": "livecheck-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Livecheck MCP client. Stdio server that calls the hosted Livecheck API.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "mcp": "tsx src/mcp.ts",
+    "test": "tsx --test test/mcp-stdio.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "26.4.0",
+    "tsx": "4.23.13",
+    "typescript": "5.9.3"
+  }
+}
