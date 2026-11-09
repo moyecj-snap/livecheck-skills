@@ -91,7 +91,7 @@ export function createLivecheckMcp(): McpServer {
     version: MCP_SERVER_VERSION,
   });
 
-  const verifyDescription = `Ask Livecheck whether a specific URL is still a live primary source. POSTs {url} to ${livecheckVerifyUrl()} ($0.01 USDC). ${NO_WALLET_NOTE} HTTP 200 returns the verify JSON as-is. Job postings include an age object (posted_at, age_days, age_bucket, stale_age) from the hiring platform's first-posted date; it is context only and never changes status or confidence. On 503, wait for Retry-After and retry. For a list of URLs, send up to 8 checks at a time.`;
+  const verifyDescription = `Ask Livecheck whether a specific URL is still a live primary source. POSTs {url} to ${livecheckVerifyUrl()} ($0.01 USDC). ${NO_WALLET_NOTE} HTTP 200 returns the verify JSON as-is. Job postings include an age object (posted_at, age_days, age_bucket, stale_age) from the hiring platform's first-posted date; it is context only and never changes status or confidence. On 503, read error and wait for that response's Retry-After. A busy 503 (over_capacity or processor_unavailable) keeps "You were not charged." An x402 payment_status_unknown 503 (Retry-After 60) means the settle ran past 5 seconds: do not retry with a new payment for 60 seconds; retry with the same credential, not a new payment. Do not treat 503 as closed or unknown. For a list of URLs, send up to 8 checks at a time.`;
 
   server.registerTool(
     "verify_listing",

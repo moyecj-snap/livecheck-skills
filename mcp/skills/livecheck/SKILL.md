@@ -1,7 +1,7 @@
 ---
 name: livecheck
 description: |
-  Primary use: clean a batch of job URLs before apply or outreach. Live status of a specific job posting, product page, or listing, read from the page itself right now. Verify accepts x402 (Base USDC) or MPP (Tempo USDC.e, chain 4217, tempo/charge, exactly $0.01, Stripe pays gas). No account or API key. Returns live / closed / unknown plus title and signals (in-stock, sold-out, apply form present, http_404). Also one-shot condition checks and 30-day URL watchers. Confirm (forms and orders) is a separate, optional use — not part of list cleaning.
+  Primary use: clean a batch of job URLs before apply or outreach. Live status of a specific job posting, product page, or listing, read from the page itself right now. Verify accepts x402 (Base USDC) or MPP (Tempo USDC.e, chain 4217, tempo/charge, exactly $0.01, Stripe pays gas). No account or API key. 200 free checks over 30 days, no wallet needed. Returns live / closed / unknown plus title and signals (in-stock, sold-out, apply form present, http_404). Also one-shot condition checks and 30-day URL watchers. Confirm (forms and orders) is a separate, optional use — not part of list cleaning.
 
   USE FOR:
   - Cleaning a batch of job URLs before apply or outreach (ghost jobs, stale board rows, scraped lists)
@@ -23,16 +23,18 @@ description: |
   Use agentcash.fetch for livecheck.fly.dev endpoints. Job and listing checks are $0.01 per URL; generic verify is $0.01; one-shot checks $0.02; watchers $2.50 for 30 days.
 
   With MPP (Tempo): Paid answers, including the checked link, are kept for 24 hours so retries are safe, then deleted.
-  On HTTP 503, wait for the Retry-After header (seconds) and retry. over_capacity and x402 processor_unavailable were not charged. An MPP 503 payment_unconfirmed means a possible charge is logged for refund; retry with the same credential, not a new payment. Do not treat 503 as closed or unknown. For a list of URLs, send up to 8 verifies at a time (server concurrency default is 8; a short queue may absorb brief bursts).
+  On HTTP 503, read `error` and wait for that response's `Retry-After` header (seconds). Do not treat 503 as closed or unknown. A busy 503 (`error` `over_capacity` or x402 `processor_unavailable`) keeps "You were not charged." in `message` and its own `Retry-After`; wait that long and retry. An x402 503 with `error` `payment_status_unknown` means the settle ran past 5 seconds. `message` is "Payment status unknown. Don't retry for 60 seconds. If you were charged and got no answer, we'll refund it." `Retry-After` is 60. Do not retry with a new payment for 60 seconds. Retry with the same credential, not a new payment. A late settle is a refund candidate that Craig approves manually. An MPP 503 with `error` `payment_unconfirmed` means the payment could not be confirmed: a possible charge is logged for refund. Retry with the same credential, not a new payment. For a list of URLs, send up to 8 verifies at a time (server concurrency default is 8; a short queue may absorb brief bursts).
 mcp:
   - agentcash
 metadata:
-  version: "4.1.1"
+  version: "4.1.2"
 ---
 
 # Livecheck: live status of listings, products, and job postings
 
-Version 4.1.1. The primary use is list cleaning: a batch of job URLs, checked before apply or outreach. Verify is exactly $0.01. No account or API key. Base URL: `https://livecheck.fly.dev`.
+Version 4.1.2. The primary use is list cleaning: a batch of job URLs, checked before apply or outreach. Verify is exactly $0.01. No account or API key. Base URL: `https://livecheck.fly.dev`.
+
+No wallet yet? Sign in with GitHub at https://livecheck.fly.dev/keys. 200 free checks over 30 days, no wallet needed. A starter key covers `POST /v1/verify`, `/v1/verify/job`, and `/v1/verify/listing`; send it as `Authorization: Bearer <key>`. Check, watch, and confirm stay on a wallet. When the checks run out, call the same route without the key to pay with a wallet.
 
 Try it free in a browser: https://livecheck.fly.dev/job?ref=clawhub
 
@@ -65,10 +67,7 @@ Fetch the page yourself when you need the posting body (requirements, salary, lo
 
 ## Capacity
 
-`POST /v1/verify`, `POST /v1/verify/job`, and `POST /v1/verify/listing` return HTTP 503 with a `Retry-After` header (seconds) when the check queue is full, a queued check waited too long, or the payment processor times out or errors. On 503, wait for `Retry-After` and retry. Do not treat 503 as `closed` or `unknown`.
-
-- 503 `over_capacity` or x402 `processor_unavailable`: you were not charged.
-- 503 MPP `payment_unconfirmed`: the payment could not be confirmed. A possible charge is logged for refund. Retry with the same credential, not a new payment.
+`POST /v1/verify`, `POST /v1/verify/job`, and `POST /v1/verify/listing` return HTTP 503 as `{ "error": "<code>", "message": "<text>" }`. On HTTP 503, read `error` and wait for that response's `Retry-After` header (seconds). Do not treat 503 as `closed` or `unknown`. A busy 503 (`error` `over_capacity` or x402 `processor_unavailable`) keeps "You were not charged." in `message` and its own `Retry-After`; wait that long and retry. An x402 503 with `error` `payment_status_unknown` means the settle ran past 5 seconds. `message` is "Payment status unknown. Don't retry for 60 seconds. If you were charged and got no answer, we'll refund it." `Retry-After` is 60. Do not retry with a new payment for 60 seconds. Retry with the same credential, not a new payment. A late settle is a refund candidate that Craig approves manually. An MPP 503 with `error` `payment_unconfirmed` means the payment could not be confirmed: a possible charge is logged for refund. Retry with the same credential, not a new payment.
 
 For a list of URLs, send up to 8 verifies at a time. Server concurrency default is 8; a short queue may absorb brief bursts.
 
@@ -98,7 +97,7 @@ Primary use. You already have the posting URLs (search, a scraper, a board expor
 
 - [ ] `POST /v1/verify/job` once per URL
 - [ ] Send up to 8 verifies at a time. Server concurrency default is 8; a short queue may absorb brief bursts.
-- [ ] On HTTP 503, wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as `closed` or `unknown`. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retry with the same credential, not a new payment.
+- [ ] On HTTP 503, read `error` and wait for that response's `Retry-After` header (seconds). Do not treat 503 as `closed` or `unknown`. A busy 503 (`error` `over_capacity` or x402 `processor_unavailable`) keeps "You were not charged." in `message` and its own `Retry-After`; wait that long and retry. An x402 503 with `error` `payment_status_unknown` means the settle ran past 5 seconds. `message` is "Payment status unknown. Don't retry for 60 seconds. If you were charged and got no answer, we'll refund it." `Retry-After` is 60. Do not retry with a new payment for 60 seconds. Retry with the same credential, not a new payment. A late settle is a refund candidate that Craig approves manually. An MPP 503 with `error` `payment_unconfirmed` means the payment could not be confirmed: a possible charge is logged for refund. Retry with the same credential, not a new payment.
 - [ ] Skip `closed` (position filled, no longer accepting applications, expired, 404)
 - [ ] Flag `unknown` for the user
 - [ ] Tailor, apply, or reach out only on `live`
@@ -133,7 +132,7 @@ agentcash.fetch(
 
 - [ ] Job postings: `POST /v1/verify/job`. Product pages: `POST /v1/verify/listing`. Other specific URLs: `POST /v1/verify`. One call per URL.
 - [ ] Send up to 8 verifies at a time. Server concurrency default is 8; a short queue may absorb brief bursts.
-- [ ] On HTTP 503, wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as `closed` or `unknown`. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retry with the same credential, not a new payment.
+- [ ] On HTTP 503, read `error` and wait for that response's `Retry-After` header (seconds). Do not treat 503 as `closed` or `unknown`. A busy 503 (`error` `over_capacity` or x402 `processor_unavailable`) keeps "You were not charged." in `message` and its own `Retry-After`; wait that long and retry. An x402 503 with `error` `payment_status_unknown` means the settle ran past 5 seconds. `message` is "Payment status unknown. Don't retry for 60 seconds. If you were charged and got no answer, we'll refund it." `Retry-After` is 60. Do not retry with a new payment for 60 seconds. Retry with the same credential, not a new payment. A late settle is a refund candidate that Craig approves manually. An MPP 503 with `error` `payment_unconfirmed` means the payment could not be confirmed: a possible charge is logged for refund. Retry with the same credential, not a new payment.
 - [ ] Return three groups: live, closed, unknown
 
 ## Job: is this posting still open?
@@ -184,7 +183,7 @@ agentcash.fetch(
 **Returns:**
 - `status` - `live`, `closed`, or `unknown`
 - `title` - Page title of the item
-- `signals` - Evidence strings from production (not snake_case kit names). Examples: `http_404`, `http_410`, `close_language:<phrase>`, `redirected_to_board`, `ats_empty_state`, `ats_api_missing`, `ats_api_listed`, `challenge_page`, `loginwalled`, `not_a_specific_posting`, `careers_homepage`, `collection_or_category`, `apply form present`, `no closure banner`, `sold-out`, `in-stock`, `ambiguous_html`. eBay adapter may add `ebay-ended`, `ebay-in-stock`, `ebay_availability_unknown`. There is no `invalid_url` code; errors are `{ "error": "<message>" }` (400 for bad URL/JSON, 502 fetch fail, 503 over capacity, x402 payment processor, or MPP `payment_unconfirmed`, 504 timeout). On 503, wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as `closed` or `unknown`. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retry with the same credential, not a new payment.
+- `signals` - Evidence strings from production (not snake_case kit names). Examples: `http_404`, `http_410`, `close_language:<phrase>`, `redirected_to_board`, `ats_empty_state`, `ats_api_missing`, `ats_api_listed`, `challenge_page`, `loginwalled`, `not_a_specific_posting`, `careers_homepage`, `collection_or_category`, `apply form present`, `no closure banner`, `sold-out`, `in-stock`, `ambiguous_html`. eBay adapter may add `ebay-ended`, `ebay-in-stock`, `ebay_availability_unknown`. There is no `invalid_url` code; 400, 502, and 504 errors are `{ "error": "<message>" }`. A 503 is `{ "error": "<code>", "message": "<text>" }`. On HTTP 503, read `error` and wait for that response's `Retry-After` header (seconds). Do not treat 503 as `closed` or `unknown`. A busy 503 (`error` `over_capacity` or x402 `processor_unavailable`) keeps "You were not charged." in `message` and its own `Retry-After`; wait that long and retry. An x402 503 with `error` `payment_status_unknown` means the settle ran past 5 seconds. `message` is "Payment status unknown. Don't retry for 60 seconds. If you were charged and got no answer, we'll refund it." `Retry-After` is 60. Do not retry with a new payment for 60 seconds. Retry with the same credential, not a new payment. A late settle is a refund candidate that Craig approves manually. An MPP 503 with `error` `payment_unconfirmed` means the payment could not be confirmed: a possible charge is logged for refund. Retry with the same credential, not a new payment.
 - `http_status`, `canonical_url`, `checked_at`
 - `confidence` - 0 to 1
 - `price_usd` - Fixed price for this call (0.01 for verify routes)
@@ -195,7 +194,7 @@ agentcash.fetch(
 - `live` → proceed (recommend, apply, add to cart)
 - `closed` → drop it and tell the user it's no longer available
 - `unknown` → the page couldn't be read reliably (login wall, heavy JavaScript, bot block). Say so; don't guess
-- HTTP 503 → wait for the `Retry-After` header (seconds) and retry. Do not treat 503 as `closed` or `unknown`. `over_capacity` and x402 `processor_unavailable` were not charged. An MPP 503 `payment_unconfirmed` means a possible charge is logged for refund; retry with the same credential, not a new payment.
+- On HTTP 503, read `error` and wait for that response's `Retry-After` header (seconds). Do not treat 503 as `closed` or `unknown`. A busy 503 (`error` `over_capacity` or x402 `processor_unavailable`) keeps "You were not charged." in `message` and its own `Retry-After`; wait that long and retry. An x402 503 with `error` `payment_status_unknown` means the settle ran past 5 seconds. `message` is "Payment status unknown. Don't retry for 60 seconds. If you were charged and got no answer, we'll refund it." `Retry-After` is 60. Do not retry with a new payment for 60 seconds. Retry with the same credential, not a new payment. A late settle is a refund candidate that Craig approves manually. An MPP 503 with `error` `payment_unconfirmed` means the payment could not be confirmed: a possible charge is logged for refund. Retry with the same credential, not a new payment.
 
 Livecheck reads HTML and HTTP status. It does not execute JavaScript, so single-page apps may return `unknown`. Status means availability only, not legitimacy or fraud risk.
 
