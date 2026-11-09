@@ -172,9 +172,15 @@ export async function livecheckRequest(
   }
 
   const body = parseJsonObject(text);
-  const error = new Error(`Livecheck returned HTTP ${response.status}.`);
-  (error as Error & { http: number; body: unknown }).http = response.status;
-  (error as Error & { http: number; body: unknown }).body = body ?? text;
+  const error = new Error(`Livecheck returned HTTP ${response.status}.`) as Error & {
+    http: number;
+    body: unknown;
+    retryAfter?: string;
+  };
+  error.http = response.status;
+  error.body = body ?? text;
+  const retryAfter = response.headers.get("retry-after");
+  if (retryAfter) error.retryAfter = retryAfter;
   throw error;
 }
 
