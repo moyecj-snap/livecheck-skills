@@ -10,7 +10,7 @@
   },
   "scripts": {
     "mcp": "tsx src/mcp.ts",
-    "test": "tsx --test test/mcp-stdio.test.ts",
+    "test": "tsx --test test/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
