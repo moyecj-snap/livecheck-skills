@@ -90,6 +90,13 @@ function toolError(error: unknown) {
 const NO_WALLET_NOTE =
   "Does not pay. No wallet in this MCP. Unpaid Fly/local returns structured HTTP 402 (paid: false) plus decoded payment-required / x402 accept info. A caller that already has a PAYMENT-SIGNATURE may pass payment_signature (or set LIVECHECK_PAYMENT_SIGNATURE); only then is the paid path attempted. Never treats 402 as a successful settle.";
 
+/**
+ * x402 503 guidance for every paid tool. Livecheck's payment middleware can
+ * return payment_status_unknown on any paid route, not only verify.
+ */
+export const PAID_503_NOTE =
+  "On 503, read error and wait for that response's Retry-After. A busy 503 (over_capacity or processor_unavailable) keeps \"You were not charged.\" An x402 payment_status_unknown 503 (Retry-After 60) means the settle ran past 5 seconds: do not retry with a new payment for 60 seconds; retry with the same credential, not a new payment. After payment_status_unknown, retry at most 2 times (each after Retry-After), reusing the same payment credential; then stop and report the payment_status_unknown error to the user instead of retrying again. This tool never retries on its own.";
+
 export function createLivecheckMcp(): McpServer {
   const server = new McpServer({
     name: MCP_SERVER_NAME,
@@ -140,7 +147,7 @@ export function createLivecheckMcp(): McpServer {
     "check",
     {
       title: "Sentinel check",
-      description: `One-shot Sentinel condition. Wraps POST /v1/check ($0.02 USDC). Does not create a watcher. Detectors: status_change, keyword, text_diff, numeric_threshold. ${NO_WALLET_NOTE}`,
+      description: `One-shot Sentinel condition. Wraps POST /v1/check ($0.02 USDC). Does not create a watcher. Detectors: status_change, keyword, text_diff, numeric_threshold. ${NO_WALLET_NOTE} ${PAID_503_NOTE}`,
       inputSchema: {
         target: targetShape,
         condition: conditionShape,
@@ -167,7 +174,7 @@ export function createLivecheckMcp(): McpServer {
     "confirm",
     {
       title: "Confirm",
-      description: `Independent side-effect check. lead_submit / listing_published wrap POST /v1/confirm ($0.10). order_placed wraps POST /v1/confirm/order ($0.25) so the 402 stays one price per Fly route. ${NO_WALLET_NOTE}`,
+      description: `Independent side-effect check. lead_submit / listing_published wrap POST /v1/confirm ($0.10). order_placed wraps POST /v1/confirm/order ($0.25) so the 402 stays one price per Fly route. ${NO_WALLET_NOTE} ${PAID_503_NOTE}`,
       inputSchema: {
         url: z.string().describe("Thank-you / result / listing URL to inspect."),
         intent: z
@@ -193,7 +200,7 @@ export function createLivecheckMcp(): McpServer {
     "watch",
     {
       title: "Sentinel watch",
-      description: `Create a 30-day standard watcher. Wraps POST /v1/watch ($2.50 USDC). Returns owner_token once — store it for watch_get / watch_events / watch_stop / watch_chain_topup / watch_renew. HMAC callbacks go to callback.url (see examples/sentinel-webhook.ts). No Playwright / fast tier. ${NO_WALLET_NOTE}`,
+      description: `Create a 30-day standard watcher. Wraps POST /v1/watch ($2.50 USDC). Returns owner_token once — store it for watch_get / watch_events / watch_stop / watch_chain_topup / watch_renew. HMAC callbacks go to callback.url (see examples/sentinel-webhook.ts). No Playwright / fast tier. ${NO_WALLET_NOTE} ${PAID_503_NOTE}`,
       inputSchema: {
         target: targetShape,
         condition: conditionShape,
@@ -300,7 +307,7 @@ export function createLivecheckMcp(): McpServer {
     "watch_chain_topup",
     {
       title: "Watch chain top-up",
-      description: `Paid POST /v1/watch/{id}/chain/topup ($0.50 USDC). Owner token + payment. Funds on_change.run=verify ($0.01) and on_change.run=confirm ($0.10 / $0.25). ${NO_WALLET_NOTE}`,
+      description: `Paid POST /v1/watch/{id}/chain/topup ($0.50 USDC). Owner token + payment. Funds on_change.run=verify ($0.01) and on_change.run=confirm ($0.10 / $0.25). ${NO_WALLET_NOTE} ${PAID_503_NOTE}`,
       inputSchema: {
         id: z.string().describe("Watcher id (wtc_…)."),
         owner_token: z.string().describe("owt_… token from watch create."),
@@ -320,7 +327,7 @@ export function createLivecheckMcp(): McpServer {
     "watch_renew",
     {
       title: "Renew watcher",
-      description: `Paid POST /v1/watch/renew ($2.50 USDC). Same price as watch create. Body {id}. Owner token + payment. Extends an active watcher's prepaid window. ${NO_WALLET_NOTE}`,
+      description: `Paid POST /v1/watch/renew ($2.50 USDC). Same price as watch create. Body {id}. Owner token + payment. Extends an active watcher's prepaid window. ${NO_WALLET_NOTE} ${PAID_503_NOTE}`,
       inputSchema: {
         id: z.string().describe("Watcher id (wtc_…)."),
         owner_token: z.string().describe("owt_… token from watch create."),
