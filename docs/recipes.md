@@ -1,15 +1,21 @@
-# Gap #7 — 3 copy-paste recipes (LOCKED to MCP)
-**Fri 11 Sep 2026 · Gil**  
-**MCP:** branch `cursor/sentinel-gap7-mcp-expansion` · SHA `8fe7c35`  
+<!--
+Prices in this file must match https://livecheck.fly.dev/openapi.json.
+Update this file whenever a price changes.
+-->
+
+# Livecheck recipes
+
 **Tools:** `verify` · `check` · `confirm` · `watch` (+ `watch_get` / `watch_events` / `watch_stop` free; `watch_chain_topup` $0.50)  
 **Compat:** `verify_listing` = `verify`  
-**Unpaid:** `{ paid:false, http:402, … }` — no wallet in MCP  
+**Unpaid:** `{ paid:false, http:402, … }`. The unpaid 402 on verify routes offers both x402 (Base USDC) and MPP (Tempo USDC.e). Builders: sign in with GitHub for 200 free checks, no wallet needed: https://livecheck.fly.dev/keys
 **Webhook:** signed HMAC callback, header `X-Sentinel-Signature` (see https://livecheck.fly.dev/openapi.json, POST /v1/watch)  
 **Stats:** `GET https://livecheck.fly.dev/stats?format=json`
 
-**Prices (Base USDC x402):** verify $0.01 · check $0.02 · confirm $0.10 · confirm/order $0.25 · watch $2.50 · chain topup $0.50
+**Prices (Base USDC (x402) or MPP):** verify $0.01 · check $0.02 · confirm $0.10 · confirm/order $0.25 · watch $2.50 · chain topup $0.50
 
-Honest limits: thank-you alone ≠ confirmed; Ashby/Lever often unknown; no Amazon search URLs; watch is read-only; standard watch uses 2-of-3 before change emit.
+Check, watch, renew, chain top-up, and confirm stay x402 (Base USDC) only.
+
+Honest limits: thank-you alone ≠ confirmed; Ashby, Workday, Lever, and Greenhouse job URLs may also use that vendor's public job-board API (no API key): a Greenhouse or Workday missing posting is closed, a listed posting can confirm live, and API errors fall back to HTML; a Lever or Ashby posting missing from the public feed is not closed on that alone; bot challenges stay unknown; no Amazon search URLs; watch is read-only; standard watch uses 2-of-3 before change emit.
 
 ---
 
@@ -61,7 +67,7 @@ POST https://livecheck.fly.dev/v1/check
 
 If `fired=true` (or you need ongoing): same `watch` body as Recipe 1 with matching detector. Point `callback.url` at your HTTPS webhook (HMAC via `X-Sentinel-Signature`).
 
-Optional: `watch_chain_topup` ($0.50) if `on_change.run=verify` or `on_change.run=confirm` needs chain balance. Confirm chain default `intent` is `lead_submit` ($0.10 internal); `listing_published` ($0.10) / `order_placed` ($0.25) are the same public Confirm prices.
+Optional: `watch_chain_topup` ($0.50) if `on_change.run=verify` or `on_change.run=confirm` needs chain balance. Confirm chain default `intent` is `lead_submit` ($0.10); `listing_published` ($0.10) / `order_placed` ($0.25) are the same Confirm prices.
 
 ---
 
@@ -88,17 +94,16 @@ Paid 200 includes:
 
 Follow the hint with `watch` if the thank-you/result URL should be watched later.
 
-**Skill install (already on main):**
+**Skill install:**
 ```bash
 npx skills add moyecj-snap/livecheck-skills --all --yes
 ```
 
 ---
 
-## Install blurb (docs / Wave 1)
+## Install blurb
 ```
 npx skills add moyecj-snap/livecheck-skills --all --yes
-# MCP: branch cursor/sentinel-gap7-mcp-expansion @ 8fe7c35
 # Tools: verify | check | confirm | watch
 # Webhook: HMAC header X-Sentinel-Signature; see https://livecheck.fly.dev/openapi.json (POST /v1/watch)
 # Stats: https://livecheck.fly.dev/stats?format=json
