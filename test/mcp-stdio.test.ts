@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, it } from "node:test";
 import {
@@ -75,6 +76,52 @@ describe("livecheck MCP stdio", () => {
 
   it("advertises verify_listing plus verify/check/confirm/watch over stdio", async () => {
     const child = spawn(resolve("node_modules/.bin/tsx"), [resolve("src/mcp.ts")], {
+      cwd: resolve("."),
+      env: { ...process.env, LIVECHECK_URL: "http://127.0.0.1:43127/v1/verify" },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+
+    try {
+      send(child, {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "initialize",
+        params: {
+          protocolVersion: "2024-11-05",
+          capabilities: {},
+          clientInfo: { name: "livecheck-test", version: "0.1.0" },
+        },
+      });
+      const initialized = await readJsonLine(child);
+      assert.equal(initialized.id, 1);
+      assert.ok(initialized.result);
+
+      send(child, { jsonrpc: "2.0", method: "notifications/initialized" });
+      send(child, { jsonrpc: "2.0", id: 2, method: "tools/list", params: {} });
+      const listed = await readJsonLine(child);
+      assert.equal(listed.id, 2);
+      const tools = (listed.result as { tools?: Array<{ name: string }> })?.tools ?? [];
+      const names = tools.map((tool) => tool.name);
+      for (const name of MCP_TOOL_NAMES) {
+        assert.ok(names.includes(name), `missing MCP tool ${name}`);
+      }
+    } finally {
+      child.kill("SIGTERM");
+    }
+  });
+
+  it("mcp.json starts the committed bundle with node", () => {
+    const raw = readFileSync(resolve("mcp.json"), "utf8");
+    const parsed = JSON.parse(raw) as {
+      mcpServers: { livecheck: { command: string; args: string[] } };
+    };
+    const server = parsed.mcpServers.livecheck;
+    assert.equal(server.command, "node");
+    assert.deepEqual(server.args, ["${CURSOR_PLUGIN_ROOT}/dist/mcp.js"]);
+  });
+
+  it("committed dist/mcp.js advertises the same tools over stdio", async () => {
+    const child = spawn(process.execPath, [resolve("dist/mcp.js")], {
       cwd: resolve("."),
       env: { ...process.env, LIVECHECK_URL: "http://127.0.0.1:43127/v1/verify" },
       stdio: ["pipe", "pipe", "pipe"],

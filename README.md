@@ -6,7 +6,7 @@ x402 payment setup, API description and 30-day uptime, probed every 6 hours by g
 
 Try it free in a browser: https://livecheck.fly.dev/job?ref=clawhub
 
-Version 4.1.2. Agent skills for [Livecheck](https://livecheck.fly.dev): live status of listings, product pages, and job postings, read from the page at call time. Verify is exactly $0.01, paid with x402 (Base USDC) or MPP (Tempo USDC.e, chain 4217, method `tempo/charge`; Stripe pays gas). Check, watch, and confirm stay x402 on Base. Wallet calls need no account or API key. Wallet: [agentcash](https://agentcash.dev).
+Version 4.1.2. Agent skills for [Livecheck](https://livecheck.fly.dev): live status of listings, product pages, and job postings, read from the page at call time. Verify is exactly $0.01, paid with Base USDC (x402) or MPP (Tempo USDC.e, chain 4217, method `tempo/charge`; Stripe pays gas). Check, watch, and confirm stay x402 on Base. Wallet calls need no account or API key. Wallet: [agentcash](https://agentcash.dev).
 
 No wallet yet? Sign in with GitHub at https://livecheck.fly.dev/keys. 200 free checks over 30 days, no wallet needed. A starter key covers `POST /v1/verify`, `/v1/verify/job`, and `/v1/verify/listing`; send it as `Authorization: Bearer <key>`. Check, watch, and confirm stay on a wallet. When the checks run out, call the same route without the key to pay with a wallet.
 
@@ -67,10 +67,13 @@ npx skills add moyecj-snap/livecheck-skills/mcp --all --yes
 Cursor Marketplace installs this repository as a plugin. The manifest is `.cursor-plugin/plugin.json` and its `logo` is `.cursor-plugin/logo.svg`. Root [`mcp.json`](https://github.com/moyecj-snap/livecheck-skills/blob/main/mcp.json) is the file Stripe Directory's MCP action should link. It starts the stdio client with `${CURSOR_PLUGIN_ROOT}`:
 
 ```json
-"args": ["-y", "tsx", "${CURSOR_PLUGIN_ROOT}/src/mcp.ts"]
+{
+  "command": "node",
+  "args": ["${CURSOR_PLUGIN_ROOT}/dist/mcp.js"]
+}
 ```
 
-The client calls `https://livecheck.fly.dev`. Unpaid calls return HTTP 402. From a checkout of this repo: `npm install`, then `npm test`.
+The client calls `https://livecheck.fly.dev`. Unpaid calls return HTTP 402. The committed `dist/mcp.js` bundle runs with `node` and does not need `npm install`. From a checkout of this repo, `npm install` then `npm test` runs the TypeScript tests.
 
 Or add the origin directly to your agentcash wallet:
 
@@ -87,6 +90,8 @@ npx agentcash@0.17.1 add https://livecheck.fly.dev
 | `POST /v1/verify` | $0.01 exactly (x402 or MPP) | Is this other specific URL still live? |
 | `POST /v1/check` | $0.02 | One-shot keyword, price-threshold, or change check |
 | `POST /v1/watch` | $2.50 | 30-day URL watcher with signed webhook |
+| `POST /v1/watch/renew` | $2.50 | Renew an active 30-day watcher |
+| `POST /v1/watch/{id}/chain/topup` | $0.50 | Add $0.50 chain balance to a watcher |
 | `POST /v1/confirm` | $0.10 | Did the form submission land? |
 | `POST /v1/confirm/order` | $0.25 | Does the order exist? |
 

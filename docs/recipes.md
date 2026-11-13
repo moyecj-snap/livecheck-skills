@@ -7,11 +7,11 @@ Update this file whenever a price changes.
 
 **Tools:** `verify` · `check` · `confirm` · `watch` (+ `watch_get` / `watch_events` / `watch_stop` free; `watch_chain_topup` $0.50)  
 **Compat:** `verify_listing` = `verify`  
-**Unpaid:** `{ paid:false, http:402, … }`. The unpaid 402 on verify routes offers both x402 (Base USDC) and MPP (Tempo USDC.e). Builders: sign in with GitHub for 200 free checks, no wallet needed: https://livecheck.fly.dev/keys
+**Unpaid:** `{ paid:false, http:402, … }`. The unpaid 402 on verify routes offers both Base USDC (x402) and MPP. Builders: sign in with GitHub for 200 free checks, no wallet needed: https://livecheck.fly.dev/keys
 **Webhook:** signed HMAC callback, header `X-Sentinel-Signature` (see https://livecheck.fly.dev/openapi.json, POST /v1/watch)  
 **Stats:** `GET https://livecheck.fly.dev/stats?format=json`
 
-**Prices (Base USDC (x402) or MPP):** verify $0.01 · check $0.02 · confirm $0.10 · confirm/order $0.25 · watch $2.50 · chain topup $0.50
+**Prices (Base USDC (x402) or MPP):** verify $0.01 · check $0.02 · confirm $0.10 · confirm/order $0.25 · watch $2.50 · watch/renew $2.50 · chain top-up $0.50
 
 Check, watch, renew, chain top-up, and confirm stay x402 (Base USDC) only.
 

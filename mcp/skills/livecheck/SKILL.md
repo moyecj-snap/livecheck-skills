@@ -1,7 +1,7 @@
 ---
 name: livecheck
 description: |
-  Primary use: clean a batch of job URLs before apply or outreach. Live status of a specific job posting, product page, or listing, read from the page itself right now. Verify accepts x402 (Base USDC) or MPP (Tempo USDC.e, chain 4217, tempo/charge, exactly $0.01, Stripe pays gas). No account or API key. 200 free checks over 30 days, no wallet needed. Returns live / closed / unknown plus title and signals (in-stock, sold-out, apply form present, http_404). Also one-shot condition checks and 30-day URL watchers. Confirm (forms and orders) is a separate, optional use — not part of list cleaning.
+  Primary use: clean a batch of job URLs before apply or outreach. Live status of a specific job posting, product page, or listing, read from the page itself right now. Verify accepts Base USDC (x402) or MPP (exactly $0.01). No account or API key. 200 free checks over 30 days, no wallet needed. Returns live / closed / unknown plus title and signals (in-stock, sold-out, apply form present, http_404). Also one-shot condition checks and 30-day URL watchers. Confirm (forms and orders) is a separate, optional use — not part of list cleaning.
 
   USE FOR:
   - Cleaning a batch of job URLs before apply or outreach (ghost jobs, stale board rows, scraped lists)
@@ -22,7 +22,7 @@ description: |
 
   Use agentcash.fetch for livecheck.fly.dev endpoints. Job and listing checks are $0.01 per URL; generic verify is $0.01; one-shot checks $0.02; watchers $2.50 for 30 days.
 
-  With MPP (Tempo): Paid answers, including the checked link, are kept for 24 hours so retries are safe, then deleted. Retries are still capped: After payment_status_unknown, retry at most 2 times (each after Retry-After), reusing the same payment credential; then stop and report the payment_status_unknown error to the user instead of retrying again.
+  With MPP: Paid answers, including the checked link, are kept for 24 hours so retries are safe, then deleted. Retries are still capped: After payment_status_unknown, retry at most 2 times (each after Retry-After), reusing the same payment credential; then stop and report the payment_status_unknown error to the user instead of retrying again.
   On HTTP 503, read `error` and wait for that response's `Retry-After` header (seconds). Do not treat 503 as closed or unknown. A busy 503 (`error` `over_capacity` or x402 `processor_unavailable`) keeps "You were not charged." in `message` and its own `Retry-After`; wait that long and retry. An x402 503 with `error` `payment_status_unknown` means the settle ran past 5 seconds. `message` is "Payment status unknown. Don't retry for 60 seconds. If you were charged and got no answer, we'll refund it." `Retry-After` is 60. Do not retry with a new payment for 60 seconds. Retry with the same credential, not a new payment. After payment_status_unknown, retry at most 2 times (each after Retry-After), reusing the same payment credential; then stop and report the payment_status_unknown error to the user instead of retrying again. A late settle is a refund candidate that Craig approves manually. An MPP 503 with `error` `payment_unconfirmed` means the payment could not be confirmed: a possible charge is logged for refund. Retry with the same credential, not a new payment. For a list of URLs, send up to 8 verifies at a time (server concurrency default is 8; a short queue may absorb brief bursts).
 mcp:
   - agentcash
@@ -44,12 +44,9 @@ For a job posting, call `POST /v1/verify/job`. For a product page (eBay, Shopify
 
 ## Verify payment
 
-`POST /v1/verify`, `POST /v1/verify/job`, and `POST /v1/verify/listing` accept two rails. Each charges exactly $0.01. Send one credential: x402 `PAYMENT-SIGNATURE` or MPP `Authorization: Payment`, not both.
+`POST /v1/verify`, `POST /v1/verify/job`, and `POST /v1/verify/listing` accept two rails: Base USDC (x402) or MPP. Each charges exactly $0.01. Send one credential: x402 `PAYMENT-SIGNATURE` or MPP `Authorization: Payment`, not both.
 
-- **x402** — USDC on Base (agentcash).
-- **MPP** — Tempo USDC.e, chain 4217, method `tempo/charge`. Stripe pays Tempo gas.
-
-With MPP (Tempo): Paid answers, including the checked link, are kept for 24 hours so retries are safe, then deleted. Retries are still capped: After payment_status_unknown, retry at most 2 times (each after Retry-After), reusing the same payment credential; then stop and report the payment_status_unknown error to the user instead of retrying again.
+With MPP: Paid answers, including the checked link, are kept for 24 hours so retries are safe, then deleted. Retries are still capped: After payment_status_unknown, retry at most 2 times (each after Retry-After), reusing the same payment credential; then stop and report the payment_status_unknown error to the user instead of retrying again.
 
 Check, watch, renew, chain top-up, and confirm stay x402 on Base.
 

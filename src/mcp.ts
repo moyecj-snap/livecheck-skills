@@ -1,7 +1,8 @@
 /** Gap #7 MCP entrypoint.
  * Tools (via ./mcp-server): verify, check, confirm, watch,
  * plus verify_listing compat and watch_get/events/stop/chain_topup.
- * npm run mcp → tsx src/mcp.ts
+ * Production entry is the committed bundle: node dist/mcp.js
+ * (npm run build:mcp). Local TypeScript: npx tsx src/mcp.ts
  */
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createLivecheckMcp, mcpReadyMessage } from "./mcp-server.js";
