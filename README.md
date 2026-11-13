@@ -1,5 +1,9 @@
 # Livecheck Skills
 
+[![graded A](https://graded.sh/badge/bz_79e142b97a14.svg)](https://graded.sh/s/bz_79e142b97a14)
+
+x402 payment setup, API description and 30-day uptime, probed every 6 hours by graded.sh. It doesn't test result quality.
+
 Try it free in a browser: https://livecheck.fly.dev/job?ref=clawhub
 
 Version 4.1.2. Agent skills for [Livecheck](https://livecheck.fly.dev): live status of listings, product pages, and job postings, read from the page at call time. Verify is exactly $0.01, paid with x402 (Base USDC) or MPP (Tempo USDC.e, chain 4217, method `tempo/charge`; Stripe pays gas). Check, watch, and confirm stay x402 on Base. Wallet calls need no account or API key. Wallet: [agentcash](https://agentcash.dev).
