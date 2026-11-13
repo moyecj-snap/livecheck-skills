@@ -6,7 +6,7 @@ x402 payment setup, API description and 30-day uptime, probed every 6 hours by g
 
 Try it free in a browser: https://livecheck.fly.dev/job?ref=clawhub
 
-Version 4.1.2. Agent skills for [Livecheck](https://livecheck.fly.dev): live status of listings, product pages, and job postings, read from the page at call time. Verify is exactly $0.01, paid with Base USDC (x402) or MPP (Tempo USDC.e, chain 4217, method `tempo/charge`; Stripe pays gas). Check, watch, and confirm stay x402 on Base. Wallet calls need no account or API key. Wallet: [agentcash](https://agentcash.dev).
+Version 4.1.2. Agent skills for [Livecheck](https://livecheck.fly.dev): live status of listings, product pages, and job postings, read from the page at call time. Verify is exactly $0.01, paid with Base USDC (x402) or MPP (Tempo USDC.e, chain 4217, method `tempo/charge`; Stripe can cover gas). Check, watch, and confirm stay x402 on Base. Wallet calls need no account or API key. Wallet: [agentcash](https://agentcash.dev).
 
 No wallet yet? Sign in with GitHub at https://livecheck.fly.dev/keys. 200 free checks over 30 days, no wallet needed. A starter key covers `POST /v1/verify`, `/v1/verify/job`, and `/v1/verify/listing`; send it as `Authorization: Bearer <key>`. Check, watch, and confirm stay on a wallet. When the checks run out, call the same route without the key to pay with a wallet.
 

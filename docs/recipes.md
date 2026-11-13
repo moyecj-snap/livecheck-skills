@@ -11,7 +11,7 @@ Update this file whenever a price changes.
 **Webhook:** signed HMAC callback, header `X-Sentinel-Signature` (see https://livecheck.fly.dev/openapi.json, POST /v1/watch)  
 **Stats:** `GET https://livecheck.fly.dev/stats?format=json`
 
-**Prices (Base USDC (x402) or MPP):** verify $0.01 · check $0.02 · confirm $0.10 · confirm/order $0.25 · watch $2.50 · watch/renew $2.50 · chain top-up $0.50
+Prices: verify $0.01 (Base USDC (x402) or MPP) · check $0.02 · confirm $0.10 · confirm/order $0.25 · watch $2.50 · watch/renew $2.50 · chain top-up $0.50 (these are x402 on Base).
 
 Check, watch, renew, chain top-up, and confirm stay x402 (Base USDC) only.
 
