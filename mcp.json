@@ -2,16 +2,14 @@
   "mcpServers": {
     "livecheck": {
       "type": "stdio",
-      "command": "npx",
+      "command": "node",
       "args": [
-        "-y",
-        "tsx",
-        "${CURSOR_PLUGIN_ROOT}/src/mcp.ts"
+        "${CURSOR_PLUGIN_ROOT}/dist/mcp.js"
       ],
       "env": {
         "LIVECHECK_URL": "https://livecheck.fly.dev/v1/verify"
       },
-      "description": "Livecheck MCP: verify, check, confirm, watch (+ verify_listing compat; watch_get/events/stop/chain_topup). No wallet — unpaid calls return structured 402. Entry: src/mcp.ts → src/mcp-server.ts."
+      "description": "Livecheck MCP: verify, check, confirm, watch (+ verify_listing compat; watch_get/events/stop/chain_topup). No wallet — unpaid calls return structured 402. Entry: dist/mcp.js (bundled from src/mcp.ts)."
     }
   }
 }

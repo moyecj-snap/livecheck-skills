@@ -1,12 +1,12 @@
 # Getting Started
 
-Version 4.1.2. Verify is exactly $0.01: x402 (USDC on Base) or MPP (Tempo USDC.e, chain 4217, method `tempo/charge`; Stripe pays gas). Check, watch, and confirm stay x402 on Base. No account or API key. Base URL: `https://livecheck.fly.dev`.
+Version 4.1.2. Verify is exactly $0.01, paid with Base USDC (x402) or MPP. Check, watch, and confirm stay x402 on Base. No account or API key. Base URL: `https://livecheck.fly.dev`.
 
 No wallet yet? Sign in with GitHub at https://livecheck.fly.dev/keys. 200 free checks over 30 days, no wallet needed. A starter key covers `POST /v1/verify`, `/v1/verify/job`, and `/v1/verify/listing`; send it as `Authorization: Bearer <key>`. Check, watch, and confirm stay on a wallet. When the checks run out, call the same route without the key to pay with a wallet.
 
 Try it free in a browser: https://livecheck.fly.dev/job?ref=clawhub
 
-With MPP (Tempo): Paid answers, including the checked link, are kept for 24 hours so retries are safe, then deleted. Retries are still capped: After payment_status_unknown, retry at most 2 times (each after Retry-After), reusing the same payment credential; then stop and report the payment_status_unknown error to the user instead of retrying again.
+With MPP: Paid answers, including the checked link, are kept for 24 hours so retries are safe, then deleted. Retries are still capped: After payment_status_unknown, retry at most 2 times (each after Retry-After), reusing the same payment credential; then stop and report the payment_status_unknown error to the user instead of retrying again.
 
 ## When to use Livecheck instead of checking it yourself
 
@@ -51,7 +51,7 @@ For a product page, use `POST /v1/verify/listing`. For any other specific URL, u
    npx agentcash@0.17.1 check https://livecheck.fly.dev/v1/verify
    ```
 
-Verify settles exactly $0.01 in USDC on Base (x402) or USDC.e on Tempo (MPP, chain 4217, method `tempo/charge`; Stripe pays gas). Check, watch, and confirm settle in USDC on Base via x402.
+Verify settles exactly $0.01 with Base USDC (x402) or MPP. Check, watch, and confirm stay x402 on Base.
 
 ## Troubleshooting
 
