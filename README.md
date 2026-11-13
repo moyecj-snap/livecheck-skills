@@ -2,7 +2,7 @@
 
 [![graded A](https://graded.sh/badge/bz_79e142b97a14.svg)](https://graded.sh/s/bz_79e142b97a14)
 
-x402 payment setup, API description and 30-day uptime, probed every 6 hours by graded.sh. It doesn't test result quality.
+Graded on x402 payment setup, API description and 30-day uptime, probed every 6 hours by graded.sh. The grade doesn't cover result accuracy.
 
 Try it free in a browser: https://livecheck.fly.dev/job?ref=clawhub
 
