@@ -4,7 +4,7 @@ Version 4.1.2. Verify is exactly $0.01, paid with Base USDC (x402) or MPP. Check
 
 No wallet yet? Sign in with GitHub at https://livecheck.fly.dev/keys. 200 free checks over 30 days, no wallet needed. A starter key covers `POST /v1/verify`, `/v1/verify/job`, and `/v1/verify/listing`; send it as `Authorization: Bearer <key>`. Check, watch, and confirm stay on a wallet. When the checks run out, call the same route without the key to pay with a wallet.
 
-Try it free in a browser: https://livecheck.fly.dev/job?ref=clawhub
+Try it free in a browser: https://trylivecheck.com/?ref=readme
 
 With MPP: Paid answers, including the checked link, are kept for 24 hours so retries are safe, then deleted. Retries are still capped: After payment_status_unknown, retry at most 2 times (each after Retry-After), reusing the same payment credential; then stop and report the payment_status_unknown error to the user instead of retrying again.
 

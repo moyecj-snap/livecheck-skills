@@ -9,7 +9,7 @@
       "env": {
         "LIVECHECK_URL": "https://livecheck.fly.dev/v1/verify"
       },
-      "description": "Livecheck MCP: verify, check, confirm, watch (+ verify_listing compat; watch_get/events/stop/chain_topup). No wallet — unpaid calls return structured 402. Entry: dist/mcp.js (bundled from src/mcp.ts)."
+      "description": "Livecheck MCP: verify, check, confirm, watch (+ verify_listing compat; watch_get/events/stop/chain_topup/renew). No wallet — unpaid calls return structured 402. Entry: dist/mcp.js (bundled from src/mcp.ts)."
     }
   }
 }

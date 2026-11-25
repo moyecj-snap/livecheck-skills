@@ -36,7 +36,7 @@ Version 4.1.2. The primary use is list cleaning: a batch of job URLs, checked be
 
 No wallet yet? Sign in with GitHub at https://livecheck.fly.dev/keys. 200 free checks over 30 days, no wallet needed. A starter key covers `POST /v1/verify`, `/v1/verify/job`, and `/v1/verify/listing`; send it as `Authorization: Bearer <key>`. Check, watch, and confirm stay on a wallet. When the checks run out, call the same route without the key to pay with a wallet.
 
-Try it free in a browser: https://livecheck.fly.dev/job?ref=clawhub
+Try it free in a browser: https://trylivecheck.com/?ref=readme
 
 Livecheck fetches the specific URL you already have and tells you, from the page itself, whether it's live right now. It is not a search engine: bring a URL from search, a scraper, a job board, or the user. Google Shopping, job boards, and scraped datasets are snapshots. Listings sell, postings close, and pages 404 between the crawl and your action. Livecheck reads the page at call time.
 
@@ -81,6 +81,8 @@ See [rules/getting-started.md](rules/getting-started.md) for installation and wa
 | Is this URL live? | `POST https://livecheck.fly.dev/v1/verify` | $0.01 exactly (x402 or MPP) | live / closed / unknown, title, signals, confidence |
 | One-shot condition check | `https://livecheck.fly.dev/v1/check` | $0.02 | fired true/false for a keyword, price threshold, text change, or status change |
 | Watch a URL for 30 days | `https://livecheck.fly.dev/v1/watch` | $2.50 | watcher id; signed webhook when the condition fires |
+| Renew a 30-day watcher | `POST https://livecheck.fly.dev/v1/watch/renew` | $2.50 | extends an active watcher |
+| Add chain balance to a watcher | `POST https://livecheck.fly.dev/v1/watch/{id}/chain/topup` | $0.50 | adds $0.50 chain balance |
 | Confirm a form submission landed | `https://livecheck.fly.dev/v1/confirm` | $0.10 | confirmed / failed / unknown, with a signed receipt |
 | Confirm an order exists | `https://livecheck.fly.dev/v1/confirm/order` | $0.25 | confirmed / failed / unknown, with a signed receipt |
 
@@ -179,13 +181,14 @@ agentcash.fetch(
 
 **Returns:**
 - `status` - `live`, `closed`, or `unknown`
+- `label` - Optional label adds detail to a live result. backorder: can be ordered now, ships later. in_stores_only: not purchasable online, so agents completing an online purchase should treat it as unavailable.
 - `title` - Page title of the item
 - `signals` - Evidence strings from production (not snake_case kit names). Examples: `http_404`, `http_410`, `close_language:<phrase>`, `redirected_to_board`, `ats_empty_state`, `ats_api_missing`, `ats_api_listed`, `challenge_page`, `loginwalled`, `not_a_specific_posting`, `careers_homepage`, `collection_or_category`, `apply form present`, `no closure banner`, `sold-out`, `in-stock`, `ambiguous_html`. eBay adapter may add `ebay-ended`, `ebay-in-stock`, `ebay_availability_unknown`. There is no `invalid_url` code; 400, 502, and 504 errors are `{ "error": "<message>" }`. A 503 is `{ "error": "<code>", "message": "<text>" }`. On HTTP 503, read `error` and wait for that response's `Retry-After` header (seconds). Do not treat 503 as `closed` or `unknown`. A busy 503 (`error` `over_capacity` or x402 `processor_unavailable`) keeps "You were not charged." in `message` and its own `Retry-After`; wait that long and retry. An x402 503 with `error` `payment_status_unknown` means the settle ran past 5 seconds. `message` is "Payment status unknown. Don't retry for 60 seconds. If you were charged and got no answer, we'll refund it." `Retry-After` is 60. Do not retry with a new payment for 60 seconds. Retry with the same credential, not a new payment. After payment_status_unknown, retry at most 2 times (each after Retry-After), reusing the same payment credential; then stop and report the payment_status_unknown error to the user instead of retrying again. A late settle is a refund candidate that Craig approves manually. An MPP 503 with `error` `payment_unconfirmed` means the payment could not be confirmed: a possible charge is logged for refund. Retry with the same credential, not a new payment.
 - `http_status`, `canonical_url`, `checked_at`
 - `confidence` - 0 to 1
 - `price_usd` - Fixed price for this call (0.01 for verify routes)
 - `route` - API path after `/v1/` with no leading slash: `verify`, `verify/job`, or `verify/listing` (matches production Fly responses)
-- `watch` - Present on paid 200 only: `{ "suggest": "/v1/watch", "detector": "status_change", "price_usd": 2.5 }`
+- `watch` - Present on paid 200 Verify responses only when status is `live` (omitted on `closed` and `unknown`), and on paid 200 Confirm responses: `{ "suggest": "/v1/watch", "detector": "status_change", "price_usd": 2.5 }`
 
 **How to act on it:**
 - `live` → proceed (recommend, apply, add to cart)
@@ -287,5 +290,7 @@ agentcash.fetch(
 | Check top 5 shopping results | 5 | $0.05 |
 | One-shot price or keyword check | 1 | $0.02 |
 | Watch one URL for 30 days | 1 | $2.50 |
+| POST /v1/watch/renew | 1 | $2.50 |
+| POST /v1/watch/{id}/chain/topup | 1 | $0.50 |
 | Confirm a form submission | 1 | $0.10 |
 | Confirm an order | 1 | $0.25 |
