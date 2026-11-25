@@ -6,7 +6,7 @@ description: |
   USE FOR:
   - Cleaning a batch of job URLs before apply or outreach (ghost jobs, stale board rows, scraped lists)
   - Click-time check that a job posting is still open before tailoring a resume, applying, or spending the user's credits
-  - The same live / closed / unknown check across Greenhouse, Lever, Workday, Ashby, SmartRecruiters, and iCIMS
+  - The same live / closed / unknown check across Greenhouse, Lever, Workday, and Ashby
   - Checking whether a product page, eBay item, or Shopify listing is still available before recommending or buying it
   - Checking whether a search result (Google Shopping, job board, scraper output) is still live (availability, not Confirm)
   - Checking whether a price crossed a threshold or a keyword appeared on a page, once
@@ -57,7 +57,7 @@ You already have a specific URL. Call Livecheck when the next step is apply, out
 - **List cleaning (start here).** A batch of job URLs from search, a scraper, a board, or an outreach sheet. Clean it before apply or outreach. One `POST /v1/verify/job` per posting, up to 8 at a time. Keep `live`. Drop `closed`. Flag `unknown`.
 - **Ghost jobs and stale rows.** Search results, boards, and scrapes keep postings that are filled, expired, or removed. The URL still looks usable in the list. Livecheck reads that page at call time. `closed` means drop it. That is availability, not a legitimacy or fraud score.
 - **Click-time verify.** The user is about to apply, or you are about to tailor a resume or send outreach. Check the posting URL at that moment.
-- **Multi-ATS consistency.** Greenhouse, Lever, Workday, Ashby, SmartRecruiters, and iCIMS do not share one HTML shape. Job verify returns the same `live` / `closed` / `unknown` for each, so you do not write a separate parser for each ATS.
+- **Multi-ATS consistency.** Greenhouse, Lever, Workday, and Ashby do not share one HTML shape. Job verify returns the same `live` / `closed` / `unknown` for each, so you do not write a separate parser for each ATS.
 - **Save credits before apply.** Tailoring a resume, submitting an application, or starting outreach costs more than a $0.01 check. Verify the posting first.
 
 Fetch the page yourself when you need the posting body (requirements, salary, location) to tailor or quote. Livecheck returns status, title, and signals. It does not log in, submit forms, or replace the job description. After a real form submit or checkout, Confirm is a separate call. Livecheck reads HTML and HTTP status and does not run JavaScript, so a JavaScript-only page may be `unknown`. Report `unknown`. Do not guess.
@@ -146,7 +146,7 @@ agentcash.fetch(
 )
 ```
 
-POST `{"url"}` for one specific job posting page. Works on company careers pages and applicant tracking systems such as Greenhouse, Lever, Workday, Ashby, SmartRecruiters, and iCIMS. Use it before tailoring a resume, before submitting an application, and to remove stale postings from job search results. Not a job search: bring the posting URL. Reads HTML only.
+POST `{"url"}` for one specific job posting page. Works on company careers pages and applicant tracking systems such as Greenhouse, Lever, Workday and Ashby. For those four, it may also check the vendor's public job-board API (no API key needed). Other job pages are read from the page HTML only. Use it before tailoring a resume, before submitting an application, and to remove stale postings from job search results. Not a job search: bring the posting URL.
 
 ## Listing: is this product still available or sold out?
 
